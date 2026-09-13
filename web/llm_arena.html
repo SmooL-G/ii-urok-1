@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Слепое сравнение: Модель А против Модели Б</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --green:#10b981;
+  --green-lt:#ecfdf5;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --red-lt:#fef2f2;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin-top:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.row-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+
+/* Шапка: заголовок слева, плашка «Зачем бизнесу» справа */
+.head{display:grid;grid-template-columns:1fr 510px;gap:18px;align-items:start;margin-bottom:10px}
+.biz{background:var(--indigo-lt);border:1px solid #c7d2fe;border-radius:12px;padding:8px 14px;font-size:.8rem;color:#312e81;line-height:1.4}
+.biz b{display:block;font-size:.84rem;color:var(--indigo-dk);margin-bottom:1px}
+
+/* Единый промпт */
+.prompt-card{
+  background:#f8fafc;border-left:3px solid var(--indigo);border-radius:0 10px 10px 0;padding:8px 16px;margin-bottom:10px;
+}
+.prompt-card p{font-size:.87rem;color:#1e293b;line-height:1.5}
+.prompt-card .row-label{margin-right:4px}
+
+/* Два ответа в одинаковых рамках */
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.answer{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;transition:border-color .25s}
+.answer-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 14px;
+  background:#f8fafc;border-bottom:1px solid var(--border);min-height:34px;
+}
+.answer-title{font-weight:800;font-size:.9rem}
+.answer-meta{display:flex;align-items:center;gap:6px;font-size:.74rem;color:var(--muted);font-weight:600}
+.badge{padding:2px 8px;border-radius:100px;font-size:.72rem;font-weight:800;white-space:nowrap}
+.badge.bad{background:var(--red-lt);color:#991b1b;border:1px solid #fecaca}
+.badge.ok{background:var(--green-lt);color:#065f46;border:1px solid #a7f3d0}
+.answer.lost{border-color:#fca5a5}
+.answer.won{border-color:#6ee7b7}
+.answer-body{height:190px;padding:8px 14px;font-size:.8rem;line-height:1.45;color:#1e293b}
+.answer-body:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:-3px}
+#body-a{overflow-y:auto}
+#body-a p{margin-bottom:7px}
+#body-a ul{margin:0 0 7px 18px}
+#body-a li{margin-bottom:2px}
+#body-b{padding:7px 10px}
+.ans-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.78rem;line-height:1.3}
+.ans-table col.c1{width:25%}
+.ans-table th,.ans-table td{border:1px solid var(--border);padding:4px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;hyphens:auto}
+.ans-table thead th{background:#f1f5f9;font-weight:800}
+.ans-table tbody th{font-weight:700;background:#fcfcfd}
+.answers-note{font-size:.76rem;color:var(--muted);margin:5px 0 8px}
+.answers-note a{color:var(--indigo);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.answers-note a:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px;border-radius:3px}
+
+/* Оценочная панель */
+.eval{display:grid;grid-template-columns:1.62fr 1fr;gap:14px;align-items:start}
+.panel-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;min-height:28px}
+.reset-btn{
+  padding:4px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;font-family:inherit;
+  font-size:.8rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.reset-btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.crit-list{display:flex;flex-direction:column;gap:4px}
+.crit{
+  display:grid;grid-template-columns:222px auto 1fr;align-items:center;gap:10px;
+  border:1px solid var(--border);border-radius:10px;padding:3px 10px;min-height:37px;transition:background .2s,border-color .2s;
+}
+.crit-name{display:flex;align-items:center;gap:7px;font-size:.8rem;font-weight:700;line-height:1.25}
+.crit-name .num{
+  width:20px;height:20px;border-radius:50%;background:var(--indigo-lt);color:var(--indigo-dk);
+  font-size:.72rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.pair{display:flex;gap:5px}
+.pick{
+  padding:4px 11px;border-radius:10px;border:1px solid var(--border);background:#fff;font-family:inherit;
+  font-size:.78rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;white-space:nowrap;
+}
+.pick:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.pick.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.crit-info{font-size:.75rem;line-height:1.3;color:var(--muted)}
+.crit.match{background:var(--green-lt);border-color:#a7f3d0}
+.crit.match .crit-info{color:#065f46}
+.crit.miss{background:var(--amber-lt);border-color:#fde68a}
+.crit.miss .crit-info{color:#92400e}
+.crit.none .crit-info{color:#334155}
+
+.vote-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.choice-btn{
+  flex:1;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-family:inherit;
+  font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;white-space:nowrap;
+}
+.choice-btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.choice-btn.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.choice-btn:focus-visible,.pick:focus-visible,.reset-btn:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+.vote-label{margin-bottom:6px}
+.reveal{border:1px solid var(--border);border-radius:12px;background:#f8fafc;padding:8px 12px;font-size:.78rem;line-height:1.4}
+.reveal-hint{color:var(--muted)}
+.rv{margin-bottom:4px;padding-left:9px;border-left:3px solid transparent}
+.rv.a{border-left-color:var(--red)}
+.rv.b{border-left-color:var(--green)}
+.cmp{margin-top:6px;padding:5px 9px;border-radius:9px;font-weight:600}
+.cmp.ok{background:var(--green-lt);color:#065f46}
+.cmp.warn{background:var(--amber-lt);color:#92400e}
+
+/* На десктопе кнопки голоса говорят сами за себя — подпись остаётся для экранного диктора */
+@media (min-width:861px){
+  .vote-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+}
+@media (max-width:860px){
+  .head,.answers,.eval{grid-template-columns:1fr}
+  .answer-body{height:auto}
+  #body-a{max-height:250px}
+  .crit{grid-template-columns:1fr;gap:5px;padding:7px 10px}
+  .pick{flex:1}
+}
+@media (max-width:420px){
+  .ans-table{font-size:.74rem}
+  .ans-table th,.ans-table td{padding:4px 5px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <div>
+    <h1>Слепое сравнение: Модель А против Модели Б</h1>
+    <p class="sub">Как слепая дегустация: один промпт, два безымянных ответа, «имена» — только после вашего голоса.</p>
+  </div>
+  <div class="biz" role="note">
+    <b>Зачем бизнесу A/B-тесты</b>
+    Можно выяснить, что для сортировки писем подходит модель в разы дешевле; сотрудники выбирают инструмент по измеримому качеству, а не по моде.
+  </div>
+</div>
+
+<div class="prompt-card">
+  <p><span class="row-label">Единый промпт для двух моделей:</span> Ты — финансовый аналитик. Сравни два варианта покупки оборудования: лизинг и кредит. Напиши ровно 3 главных различия. Оформи в виде таблицы из 3 колонок: Критерий | Лизинг | Кредит. Не пиши никаких вступлений и заключений, сразу выдавай таблицу.</p>
+</div>
+
+<div class="answers">
+  <section class="answer" id="answer-a" aria-labelledby="title-a">
+    <div class="answer-head">
+      <span class="answer-title" id="title-a">Ответ А</span>
+      <span class="answer-meta"><span class="badge bad" id="badge-a" hidden>✕ нарушила ТЗ</span><span id="words-a"></span></span>
+    </div>
+    <div class="answer-body" id="body-a" tabindex="0" role="region" aria-label="Текст ответа А, прокручивается">
+      <p>Здравствуйте! С удовольствием помогу вам разобраться в финансовом анализе и выборе способа приобретения оборудования. Это действительно важный вопрос для любого предприятия: от правильного решения во многом зависит финансовая устойчивость компании на годы вперёд.</p>
+      <p>Прежде чем перейти к сравнению, отмечу, что и у лизинга, и у кредита есть свои преимущества и недостатки, а окончательный выбор всегда зависит от множества факторов. Давайте рассмотрим основные моменты подробнее.</p>
+      <ul>
+        <li>Лизинг всегда выгоднее кредита, потому что платежи уменьшают налоги.</li>
+        <li>При лизинге оборудование принадлежит лизинговой компании, а при кредите — вам.</li>
+        <li>Для кредита банк обычно требует залог или поручительство.</li>
+        <li>Лизинг — более гибкий и современный инструмент.</li>
+        <li>Сроки рассмотрения заявок могут различаться.</li>
+      </ul>
+      <p>В заключение хочется отметить, что выбор между лизингом и кредитом — индивидуальное решение. Рекомендую проконсультироваться со специалистами и внимательно изучить условия разных компаний. Надеюсь, эта информация была полезной! Если остались вопросы — обращайтесь.</p>
+    </div>
+  </section>
+
+  <section class="answer" id="answer-b" aria-labelledby="title-b">
+    <div class="answer-head">
+      <span class="answer-title" id="title-b">Ответ Б</span>
+      <span class="answer-meta"><span class="badge ok" id="badge-b" hidden>✓ по ТЗ</span><span id="words-b"></span></span>
+    </div>
+    <div class="answer-body" id="body-b">
+      <table class="ans-table">
+        <caption class="sr-only">Ответ Б: сравнение лизинга и кредита</caption>
+        <colgroup><col class="c1"><col><col></colgroup>
+        <thead>
+          <tr><th scope="col">Критерий</th><th scope="col">Лизинг</th><th scope="col">Кредит</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Право собствен&shy;ности</th><td>Оборудование принадлежит лизингодателю до выкупа</td><td>Оборудование сразу на балансе компании, часто в залоге у банка</td></tr>
+          <tr><th scope="row">Налоговый эффект</th><td>Лизинговые платежи можно учитывать в расходах</td><td>В расходах учитываются проценты и амортизация</td></tr>
+          <tr><th scope="row">Условия получения</th><td>Аванс обычно 10–30%, одобрение проще</td><td>Нужны залог или поручительство, требования к отчётности строже</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<p class="answers-note">Ответы учебные, написаны для демонстрации; таблица — иллюстрация, не финансовая консультация. · Настоящая арена — <a href="https://arena.ai/" target="_blank" rel="noopener">Arena AI ↗<span class="sr-only"> (откроется в новой вкладке)</span></a> (доступ из РФ не проверялся)</p>
+
+<div class="eval">
+  <div class="crit-panel">
+    <div class="panel-top">
+      <span class="row-label">Оцените по пяти критериям</span>
+      <button type="button" class="reset-btn" id="reset-btn">↺ Сначала</button>
+    </div>
+    <div class="crit-list" id="crit-list"></div>
+  </div>
+
+  <div class="vote-panel">
+    <div class="row-label vote-label" id="vote-label">Итоговый голос</div>
+    <div class="vote-btns" role="group" aria-labelledby="vote-label">
+      <button type="button" class="choice-btn" data-vote="A" aria-pressed="false">Победил А</button>
+      <button type="button" class="choice-btn" data-vote="T" aria-pressed="false">Ничья</button>
+      <button type="button" class="choice-btn" data-vote="B" aria-pressed="false">Победил Б</button>
+    </div>
+    <div class="reveal" id="reveal" aria-live="polite"></div>
+  </div>
+</div>
+
+<script>
+// Критерии оценки: вопрос-подсказка до голосования и пояснение эксперта после
+const CRITERIA = [
+  {name: "Точность и фактология", question: "Нет ли выдуманных фактов и ошибок?", expert: "в А неверное «лизинг всегда выгоднее» — зависит от условий"},
+  {name: "Следование ограничениям", question: "Выполнено ли всё, что требовал промпт?", expert: "в А вступление, список, 5 пунктов, заключение"},
+  {name: "Глубина и проработка", question: "Разбор по делу или общие слова?", expert: "в А пунктов больше, но они общие"},
+  {name: "Структура и читаемость", question: "Удобно ли читать, можно ли сразу отправить?", expert: "таблица сравнивает варианты построчно"},
+  {name: "Лаконичность, без «мусора»", question: "Нет ли вежливой «воды» до и после сути?", expert: "в А больше половины текста — «вода»"},
+];
+// Эталонная оценка учебного примера: по всем критериям лучше ответ Б
+const EXPERT_PICK = "B";
+const CONSTRAINTS_INDEX = 1;
+
+const critList = document.getElementById("crit-list");
+const reveal = document.getElementById("reveal");
+const voteButtons = [...document.querySelectorAll("[data-vote]")];
+const answerA = document.getElementById("answer-a");
+const answerB = document.getElementById("answer-b");
+const badgeA = document.getElementById("badge-a");
+const badgeB = document.getElementById("badge-b");
+const bodyA = document.getElementById("body-a");
+
+let picks = CRITERIA.map(() => null);
+let vote = null;
+
+// Счётчик слов — объективная подсказка для критерия «Лаконичность»
+function countWords(text) {
+  return text.split(/\s+/).filter((w) => /[A-Za-zА-Яа-яЁё0-9]/.test(w)).length;
+}
+function wordsLabel(n) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `≈${n} слово`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `≈${n} слова`;
+  return `≈${n} слов`;
+}
+const cellsB = [...document.querySelectorAll("#body-b th, #body-b td")].map((c) => c.textContent).join(" ");
+document.getElementById("words-a").textContent = wordsLabel(countWords(bodyA.textContent));
+document.getElementById("words-b").textContent = wordsLabel(countWords(cellsB));
+
+// Строки критериев
+const critRows = CRITERIA.map((c, i) => {
+  const row = document.createElement("div");
+  row.className = "crit";
+
+  const name = document.createElement("div");
+  name.className = "crit-name";
+  name.id = `crit-name-${i}`;
+  const num = document.createElement("span");
+  num.className = "num";
+  num.setAttribute("aria-hidden", "true");
+  num.textContent = String(i + 1);
+  name.append(num, c.name);
+
+  const pair = document.createElement("div");
+  pair.className = "pair";
+  pair.setAttribute("role", "group");
+  pair.setAttribute("aria-labelledby", name.id);
+  const buttons = ["A", "B"].map((side) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pick";
+    b.dataset.side = side;
+    b.setAttribute("aria-pressed", "false");
+    b.textContent = side === "A" ? "А лучше" : "Б лучше";
+    b.addEventListener("click", () => onPick(i, side));
+    pair.appendChild(b);
+    return b;
+  });
+
+  const info = document.createElement("div");
+  info.className = "crit-info";
+  info.textContent = c.question;
+
+  row.append(name, pair, info);
+  critList.appendChild(row);
+  return {row, buttons, info};
+});
+
+function onPick(i, side) {
+  picks[i] = picks[i] === side ? null : side;
+  critRows[i].buttons.forEach((b) => {
+    const isActive = b.dataset.side === picks[i];
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", String(isActive));
+  });
+  if (vote) {
+    renderExpertMarks();
+    renderComparison();
+  }
+}
+
+function renderExpertMarks() {
+  CRITERIA.forEach((c, i) => {
+    const {row, info} = critRows[i];
+    row.classList.remove("match", "miss", "none");
+    if (!vote) {
+      info.textContent = c.question;
+      return;
+    }
+    if (picks[i] === EXPERT_PICK) {
+      row.classList.add("match");
+      info.textContent = `✓ Эксперт тоже за Б: ${c.expert}`;
+    } else if (picks[i]) {
+      row.classList.add("miss");
+      info.textContent = `≠ Эксперт за Б: ${c.expert}`;
+    } else {
+      row.classList.add("none");
+      info.textContent = `Эксперт за Б: ${c.expert}`;
+    }
+  });
+}
+
+function comparisonResult() {
+  const differ = CRITERIA.map((c, i) => (picks[i] === EXPERT_PICK ? null : `«${c.name}»`)).filter(Boolean);
+  if (vote === EXPERT_PICK && differ.length === 0) {
+    return {ok: true, text: "✓ Вы оценили так же, как эксперт — и итог, и все пять критериев."};
+  }
+  if (vote === EXPERT_PICK && picks[CONSTRAINTS_INDEX] === EXPERT_PICK) {
+    const list = differ.length <= 2 ? differ.join(", ") : `${differ.length} шт.`;
+    return {ok: true, text: `✓ Итог совпал с экспертом. Сверьте критерии, где оценка другая или не выставлена: ${list}.`};
+  }
+  const constraintsHint = "Посмотрите на критерий «Следование ограничениям»: у А 5 пунктов вместо 3, список вместо таблицы, вступление и заключение.";
+  if (vote === EXPERT_PICK) {
+    return {ok: false, text: `Итог совпал с экспертом. ${constraintsHint}`};
+  }
+  return {ok: false, text: `Эксперт выбрал Б. ${constraintsHint}`};
+}
+
+function renderComparison() {
+  const cmp = reveal.querySelector(".cmp");
+  if (!cmp) return;
+  const result = comparisonResult();
+  if (cmp.textContent === result.text) return;
+  cmp.className = `cmp ${result.ok ? "ok" : "warn"}`;
+  cmp.textContent = result.text;
+}
+
+function renderReveal() {
+  reveal.textContent = "";
+  if (!vote) {
+    const hint = document.createElement("p");
+    hint.className = "reveal-hint";
+    hint.textContent = "Оцените ответы по критериям и отдайте итоговый голос — здесь откроется, что это были за модели.";
+    reveal.appendChild(hint);
+    return;
+  }
+  const lineA = document.createElement("p");
+  lineA.className = "rv a";
+  const nameA = document.createElement("b");
+  nameA.textContent = "Модель А";
+  lineA.append(nameA, " — учебный «многословный» ответ: нарушила ограничения — вступление, список вместо таблицы, заключение.");
+
+  const lineB = document.createElement("p");
+  lineB.className = "rv b";
+  const nameB = document.createElement("b");
+  nameB.textContent = "Модель Б";
+  lineB.append(nameB, " — 100% соблюдение ТЗ и экономия времени сотрудника.");
+
+  const cmp = document.createElement("p");
+  cmp.className = "cmp";
+  reveal.append(lineA, lineB, cmp);
+  renderComparison();
+}
+
+function setRevealedLook(isOpen) {
+  badgeA.hidden = !isOpen;
+  badgeB.hidden = !isOpen;
+  answerA.classList.toggle("lost", isOpen);
+  answerB.classList.toggle("won", isOpen);
+}
+
+voteButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const wasOpen = Boolean(vote);
+    vote = button.dataset.vote;
+    voteButtons.forEach((b) => {
+      const isActive = b === button;
+      b.classList.toggle("active", isActive);
+      b.setAttribute("aria-pressed", String(isActive));
+    });
+    setRevealedLook(true);
+    renderExpertMarks();
+    if (wasOpen) {
+      renderComparison();
+    } else {
+      renderReveal();
+    }
+  });
+});
+
+document.getElementById("reset-btn").addEventListener("click", () => {
+  picks = CRITERIA.map(() => null);
+  vote = null;
+  critRows.forEach(({buttons}) => buttons.forEach((b) => {
+    b.classList.remove("active");
+    b.setAttribute("aria-pressed", "false");
+  }));
+  voteButtons.forEach((b) => {
+    b.classList.remove("active");
+    b.setAttribute("aria-pressed", "false");
+  });
+  setRevealedLook(false);
+  renderExpertMarks();
+  renderReveal();
+  bodyA.scrollTop = 0;
+});
+
+renderReveal();
+</script>
+</body>
+</html>

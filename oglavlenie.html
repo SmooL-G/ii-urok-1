@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Оглавление — ДПО-1 «Основы применения ИИ»</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧠%3C/text%3E%3C/svg%3E">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f7;
+  --card:#ffffff;
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --text:#0f172a;
+  --muted:#64748b;
+  --nav-h:56px;
+}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(99,102,241,.14),transparent 32%),
+    radial-gradient(circle at 85% 6%,rgba(14,165,233,.13),transparent 34%),
+    linear-gradient(180deg,#f8fafc 0%,#eef2ff 30%,#f8fafc 100%);
+  color:var(--text);
+  line-height:1.65;
+  overflow-x:hidden;
+}
+nav.top{
+  position:fixed;top:0;left:0;right:0;height:var(--nav-h);
+  background:rgba(255,255,255,.97);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);box-shadow:0 1px 10px rgba(0,0,0,.06);
+  display:flex;align-items:center;padding:0 20px;z-index:900;
+  gap:2px;overflow-x:auto;scrollbar-width:none;
+}
+nav.top::-webkit-scrollbar{display:none}
+.nav-logo{font-weight:900;font-size:.93rem;color:var(--indigo-dk);white-space:nowrap;margin:0 10px 0 4px;flex-shrink:0}
+.nav-sep{width:1px;height:18px;background:var(--border);margin:0 6px;flex-shrink:0}
+.nav-link{padding:5px 10px;border-radius:6px;font-size:.75rem;font-weight:700;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .2s,background .2s;flex-shrink:0}
+.nav-link:hover,.nav-link.active{color:var(--indigo);background:var(--indigo-lt)}
+a:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+
+#hero{padding:calc(var(--nav-h) + 64px) 24px 48px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.hero-badge{padding:5px 14px;background:var(--indigo-lt);border:1px solid #c7d2fe;border-radius:100px;font-size:.78rem;font-weight:700;color:var(--indigo-dk);margin-bottom:20px}
+.hero-title{font-size:clamp(1.9rem,5vw,3.2rem);font-weight:900;line-height:1.12;letter-spacing:-1.5px;margin-bottom:14px;max-width:880px}
+.hero-title em{color:var(--indigo);font-style:normal}
+.hero-sub{font-size:1.02rem;color:var(--muted);max-width:640px}
+
+.sec{max-width:1180px;margin:0 auto;padding:48px 24px}
+section[id]{scroll-margin-top:calc(var(--nav-h) + 8px)}
+.sec-title{font-size:clamp(1.4rem,2.8vw,2rem);font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.sec-desc{font-size:.98rem;color:var(--muted);max-width:760px;line-height:1.7;margin-bottom:28px}
+
+.lessons{display:flex;flex-direction:column;gap:14px}
+.lesson{
+  display:flex;align-items:center;gap:20px;background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:20px 24px;text-decoration:none;color:var(--text);
+  box-shadow:0 2px 10px rgba(15,23,42,.04);transition:transform .15s,box-shadow .2s,border-color .2s;
+}
+.lesson:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(99,102,241,.14);border-color:#c7d2fe}
+.lesson-num{width:52px;height:52px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:900;color:#fff}
+.l1{background:linear-gradient(135deg,#6366f1,#818cf8)}
+.lesson-info{flex:1;min-width:0}
+.lesson-info b{display:block;font-size:1.04rem;font-weight:800;margin-bottom:2px}
+.lesson-info span{color:var(--muted);font-size:.9rem;line-height:1.5}
+.lesson-arrow{color:var(--indigo);font-size:1.3rem;font-weight:900;flex-shrink:0;opacity:.55;transition:opacity .2s,transform .2s}
+.lesson:hover .lesson-arrow{opacity:1;transform:translateX(3px)}
+
+.demo-group{margin-bottom:30px}
+.demo-group h3{font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.demo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.demo{
+  display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:12px 16px;text-decoration:none;color:var(--text);
+  font-size:.88rem;font-weight:600;transition:transform .15s,box-shadow .2s,border-color .2s;
+}
+.demo:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.13);border-color:#c7d2fe}
+.demo .ico{font-size:1.15rem;flex-shrink:0}
+.demo span{line-height:1.35}
+
+.fade{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+.fade.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.fade{opacity:1;transform:none;transition:none}}
+@media (max-width:900px){.sec{padding:40px 18px}}
+@media (max-width:520px){.lesson{gap:14px;padding:16px}.lesson-num{width:44px;height:44px}}
+
+footer{text-align:center;padding:32px 20px 48px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<nav class="top" aria-label="Навигация">
+  <span class="nav-logo">ДПО-1 · Основы применения ИИ</span>
+  <span class="nav-sep"></span>
+  <a class="nav-link" href="#zanyatiya">Уроки</a>
+  <a class="nav-link" href="#demo">Интерактивные демо</a>
+</nav>
+
+<header id="hero">
+  <span class="hero-badge">Оглавление курса</span>
+  <h1 class="hero-title">Уроки и материалы — <em>на одной странице</em></h1>
+  <p class="hero-sub">Лонгриды уроков курса ДПО-1 «Основы применения ИИ» и все интерактивные демонстрации — их можно открывать и по отдельности.</p>
+</header>
+
+<main>
+
+<section class="sec" id="zanyatiya">
+  <h2 class="sec-title fade">Уроки</h2>
+  <p class="sec-desc fade">Основные страницы курса в порядке прохождения.</p>
+  <div class="lessons">
+    <a class="lesson fade" href="web/kak_ustroen_ii.html">
+      <span class="lesson-num l1">1</span>
+      <span class="lesson-info"><b>Урок 1 · Как устроен современный ИИ</b>
+      <span>История ИИ от Тьюринга до ChatGPT, трансформер, токены и промпт, контекстное окно, выбор нейросети и LLM Arena · 90 минут</span></span>
+      <span class="lesson-arrow" aria-hidden="true">→</span>
+    </a>
+  </div>
+</section>
+
+<section class="sec" id="demo">
+  <h2 class="sec-title fade">Интерактивные демонстрации</h2>
+  <p class="sec-desc fade">Каждое демо встроено в урок, но открывается и как отдельная страница — удобно выводить на проектор.</p>
+
+  <div class="demo-group fade">
+    <h3>🧠 Урок 1 · Как устроен современный ИИ</h3>
+    <div class="demo-grid">
+      <a class="demo" href="web/lenta_istorii.html"><span class="ico">🕰️</span><span>Лента истории ИИ: 1950 → 2022</span></a>
+      <a class="demo" href="web/vnimanie.html"><span class="ico">🔦</span><span>Механизм внимания: кто такой «он»?</span></a>
+      <a class="demo" href="web/sleduyushchee_slovo.html"><span class="ico">🎲</span><span>Как LLM досочиняет ответ</span></a>
+      <a class="demo" href="web/tokenizator.html"><span class="ico">🔤</span><span>Учебный токенизатор</span></a>
+      <a class="demo" href="web/konstruktor_prompta.html"><span class="ico">🧱</span><span>Конструктор MEGA-промпта</span></a>
+      <a class="demo" href="web/kontekstnoe_okno.html"><span class="ico">🗂️</span><span>Три состояния контекстного окна</span></a>
+      <a class="demo" href="web/vybor_instrumenta.html"><span class="ico">🚦</span><span>Алгоритм выбора нейросети</span></a>
+      <a class="demo" href="web/llm_arena.html"><span class="ico">⚖️</span><span>Слепое сравнение: Модель А против Модели Б</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>ДПО-1 «Основы применения ИИ» · Клуб «ИИ в образовании» · 2026</p>
+</footer>
+
+<script>
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (!reduceMotion && "IntersectionObserver" in window) {
+  const reveal = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("in");
+        reveal.unobserve(entry.target);
+      }
+    });
+  }, {threshold: 0.06, rootMargin: "0px 0px -24px"});
+  document.querySelectorAll(".fade").forEach((element) => reveal.observe(element));
+} else {
+  document.querySelectorAll(".fade").forEach((element) => element.classList.add("in"));
+}
+
+const navLinks = [...document.querySelectorAll(".nav-link")];
+const sections = [...document.querySelectorAll("main section[id]")];
+if ("IntersectionObserver" in window) {
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      navLinks.forEach((link) => {
+        link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`);
+      });
+    });
+  }, {rootMargin: "-35% 0px -55%", threshold: 0});
+  sections.forEach((section) => sectionObserver.observe(section));
+}
+</script>
+</body>
+</html>

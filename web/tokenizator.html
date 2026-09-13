@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Учебный токенизатор: сколько «стоит» текст</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --green:#10b981;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin:2px 0 14px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Пресеты */
+.presets{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.row-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-right:4px}
+.choice-btn{
+  padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.choice-btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.choice-btn.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+button:focus-visible,a:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.main{min-width:0}
+
+/* Поле ввода */
+.field-label{display:block;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px}
+textarea{
+  display:block;width:100%;min-height:68px;resize:vertical;
+  font-family:inherit;font-size:1rem;line-height:1.45;color:var(--text);
+  padding:9px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;
+}
+textarea:focus{outline:none;border-color:var(--indigo)}
+textarea:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:1px}
+
+/* Разбор на токены */
+.tok-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:2px 12px;margin:12px 0 6px}
+.tok-head .field-label{margin-bottom:0}
+.tok-head .hint{font-size:.76rem;color:var(--muted)}
+.tokens{
+  display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px 4px;
+  min-height:112px;max-height:236px;overflow-y:auto;
+  border:1px solid var(--border);border-radius:14px;background:#f8fafc;padding:10px;
+}
+.tk{
+  position:relative;display:inline-flex;flex-direction:column;align-items:center;min-width:30px;
+  border-radius:8px;padding:3px 7px 2px;border:1px solid rgba(15,23,42,.10);
+}
+.tk-text{font-size:1rem;font-weight:600;line-height:1.35;white-space:pre}
+.tk-text .sp{color:var(--indigo);font-weight:900}
+.tk.ws .tk-text{color:var(--indigo);font-weight:900}
+.tk-id{font-size:.66rem;line-height:1.2;color:#475569;font-variant-numeric:tabular-nums}
+.c0{background:#e0e7ff}
+.c1{background:#cffafe}
+.c2{background:#dcfce7}
+.c3{background:#fef3c7}
+.c4{background:#fce7f3}
+.c5{background:#ede9fe}
+.empty,.more{color:var(--muted);font-size:.86rem;align-self:center}
+.warn{font-size:.76rem;color:var(--muted);margin-top:8px;line-height:1.45}
+.warn a{color:var(--indigo);font-weight:700;text-decoration:underline;text-underline-offset:2px;border-radius:3px}
+
+/* Счётчики и сравнение */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{border:1px solid var(--border);border-radius:12px;padding:8px 12px;background:#fff}
+.stat .s-num{font-size:1.5rem;font-weight:900;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat .s-label{font-size:.76rem;font-weight:700;color:var(--muted);line-height:1.3}
+.stat.accent{background:var(--indigo-lt);border-color:#c7d2fe}
+.stat.accent .s-num{color:var(--indigo-dk)}
+
+.compare{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:#f8fafc;margin-top:10px}
+.act-btn{
+  width:100%;padding:9px 16px;border-radius:10px;border:1px solid #c7d2fe;background:var(--indigo-lt);
+  font-family:inherit;font-size:.88rem;font-weight:800;color:var(--indigo-dk);cursor:pointer;transition:all .18s;
+}
+.act-btn:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.cmp-a{font-size:.8rem;color:var(--muted);margin-top:8px;line-height:1.4;overflow-wrap:anywhere}
+.cmp-diff{font-size:.95rem;font-weight:700;margin-top:4px}
+.cmp-diff b{font-size:1.35rem;font-weight:900;color:var(--indigo-dk);font-variant-numeric:tabular-nums}
+
+.takeaway{
+  margin-top:10px;background:var(--amber-lt);border:1px solid #fde68a;border-radius:12px;
+  padding:10px 14px;font-size:.84rem;color:#78350f;line-height:1.45;
+}
+
+@media (max-width:760px){
+  body{padding:16px 14px 20px}
+  .layout{grid-template-columns:1fr}
+  .tokens{max-height:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<h1>Учебный токенизатор: сколько «стоит» текст</h1>
+<p class="sub">Модель читает не словами и страницами, а токенами — фрагментами слов. Начните с примера «Встреча», нажмите «Запомнить как&nbsp;A», затем выберите «+&nbsp;поручение» и сравните счёт.</p>
+
+<div class="presets" role="group" aria-label="Готовые примеры текста">
+  <span class="row-label">Примеры</span>
+  <button type="button" class="choice-btn active" data-preset="meet" aria-pressed="true">Встреча</button>
+  <button type="button" class="choice-btn" data-preset="task" aria-pressed="false">+&nbsp;поручение</button>
+  <button type="button" class="choice-btn" data-preset="en" aria-pressed="false">English</button>
+  <button type="button" class="choice-btn" data-preset="long" aria-pressed="false">Длинное слово</button>
+  <button type="button" class="choice-btn" data-preset="emoji" aria-pressed="false">Эмодзи</button>
+</div>
+
+<div class="layout">
+  <div class="main">
+    <label class="field-label" for="src">Текст — можно менять</label>
+    <textarea id="src" rows="3" spellcheck="false"></textarea>
+
+    <div class="tok-head">
+      <span class="field-label" id="tokens-label">Разбор на токены</span>
+      <span class="hint">«·» — пробел внутри токена; под плашкой — условный номер фрагмента</span>
+    </div>
+    <div class="tokens" id="tokens" role="list" aria-labelledby="tokens-label"></div>
+
+    <p class="warn">Это упрощённая учебная модель разбиения. Настоящие токенизаторы (BPE) работают по словарю частых фрагментов, и счёт у разных моделей отличается. Точный подсчёт — во внешних инструментах: <a href="https://tiktoken.vercel.app/" target="_blank" rel="noopener">Tiktoken Web</a> и <a href="https://gptforwork.com/tools/tokenizer" target="_blank" rel="noopener">GPT for Work Tokenizer</a>.</p>
+  </div>
+
+  <aside class="side">
+    <div class="stats">
+      <div class="stat"><div class="s-num" id="n-chars">0</div><div class="s-label">символов</div></div>
+      <div class="stat"><div class="s-num" id="n-words">0</div><div class="s-label">слов</div></div>
+      <div class="stat accent"><div class="s-num" id="n-tokens">0</div><div class="s-label">токенов (оценка)</div></div>
+      <div class="stat"><div class="s-num" id="n-ratio">—</div><div class="s-label">токенов на слово</div></div>
+    </div>
+
+    <div class="compare">
+      <button type="button" class="act-btn" id="remember">Запомнить как A</button>
+      <div class="cmp-a" id="cmp-a"></div>
+      <div class="cmp-diff" id="cmp-diff"></div>
+    </div>
+
+    <div class="takeaway"><b>Вывод.</b> Исходник, поручение и история занимают место в контекстном окне. Лишнее вежливое вступление — минус полезное место; крупный шрифт — токенов столько же.</div>
+  </aside>
+</div>
+
+<p class="sr-only" id="live" aria-live="polite"></p>
+
+<script>
+// ===== УЧЕБНЫЙ ТОКЕНИЗАТОР: НАЧАЛО =====
+/*
+  Упрощённая детерминированная модель разбиения — это НЕ настоящий BPE, а иллюстрация.
+  1. Текст приводится к NFC и режется на графемы (Intl.Segmenter, если нет — регулярным выражением).
+  2. Графемы собираются в куски: слово (буквы одного алфавита подряд), число (цифры подряд),
+     пробелы подряд, переводы строки подряд. Знак препинания и эмодзи — всегда по одному.
+  3. Последний пробел перед словом или числом приклеивается к нему, как в BPE: « в» → «·в».
+     Прочие пробелы (двойные, перед знаком или эмодзи) — отдельный токен.
+  4. Число — группы по 3 цифры слева направо: «14» → 1 токен, «2026» → «202» + «6».
+  5. Латиница: слово до 6 букв — 1 токен, длиннее — куски по 4 буквы.
+  6. Кириллица: слово из словаря частых слов или до 3 букв — 1 токен. Иначе отщепляем
+     «не» (если за ним ещё приставка или длинный остаток), одну приставку («пере», «пред», «раз», «без», «при»,
+     если после неё остаётся ≥ 4 букв) и один суффикс («ительность», «ельность», «ность», «ость», «ение», «ание»,
+     если остаётся ≥ 3 букв). Если что-то отщепилось и корень не длиннее 6 букв — корень 1 токен;
+     иначе корень режем по 3 буквы, а хвост из 1–2 букв приклеиваем к предыдущему куску.
+     Пример: «непредусмотрительность» → «не» + «пред» + «усмотр» + «ительность».
+  7. Иероглифы и слоги (китайский, японский, корейский) — 1 токен на знак; другие алфавиты — как латиница.
+  8. Эмодзи — 1 токен; составное (оттенок кожи, флаг, склейка через ZWJ) — 2 токена.
+*/
+const DICT_RU = new Set([
+  "в", "на", "и", "не", "что", "это", "как", "по", "с", "к", "у", "о", "от", "до", "за", "из", "для",
+  "мы", "вы", "он", "она", "я", "встреча", "время", "место", "день", "среда", "вторник", "кабинет",
+  "новое", "укажи", "кратко", "сообщение",
+]);
+const PREFIXES = ["пере", "пред", "раз", "без", "при"];
+const SUFFIXES = ["ительность", "ельность", "ность", "ость", "ение", "ание"];
+const WORD_KINDS = new Set(["cyr", "lat", "oth", "cjk", "num"]);
+const GROUPED_KINDS = new Set(["cyr", "lat", "oth", "num", "space", "nl"]);
+
+const RE_PICTO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+const RE_LETTER = /^\p{L}/u;
+const RE_DIGIT = /^\p{Nd}/u;
+const RE_SPACE = /^\s/u;
+const RE_CYR = /^\p{Script=Cyrillic}/u;
+const RE_LAT = /^\p{Script=Latin}/u;
+const RE_CJK = /^(?:\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul})/u;
+// Запасной разбор на графемы для браузеров без Intl.Segmenter
+const RE_GRAPHEMES = /\p{Regional_Indicator}{2}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})*(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})*)*|\r\n|[\s\S]\p{M}*/gu;
+
+const SEGMENTER = (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function")
+  ? new Intl.Segmenter("ru", {granularity: "grapheme"})
+  : null;
+
+function toGraphemes(text) {
+  if (SEGMENTER) return Array.from(SEGMENTER.segment(text), (s) => s.segment);
+  return text.match(RE_GRAPHEMES) || [];
+}
+
+function kindOf(g) {
+  if (g === "\n" || g === "\r\n" || g === "\r") return "nl";
+  if (RE_SPACE.test(g)) return "space";
+  if (RE_LETTER.test(g)) {
+    if (RE_CYR.test(g)) return "cyr";
+    if (RE_LAT.test(g)) return "lat";
+    if (RE_CJK.test(g)) return "cjk";
+    return "oth";
+  }
+  if (RE_DIGIT.test(g)) return "num";
+  if (RE_PICTO.test(g)) return "emoji";
+  return "punct";
+}
+
+// Склеиваем соседние графемы одного вида в куски
+function toRuns(graphemes) {
+  const runs = [];
+  graphemes.forEach((g) => {
+    const kind = kindOf(g);
+    const last = runs[runs.length - 1];
+    if (last && last.kind === kind && GROUPED_KINDS.has(kind)) last.gs.push(g);
+    else runs.push({kind, gs: [g]});
+  });
+  return runs;
+}
+
+// Нарезка на куски фиксированной длины
+function chunk(gs, size) {
+  const out = [];
+  for (let i = 0; i < gs.length; i += size) out.push(gs.slice(i, i + size).join(""));
+  return out;
+}
+
+// Куски по 3 буквы; хвост из 1–2 букв приклеивается к предыдущему куску
+function chunk3Glue(gs) {
+  const parts = [];
+  for (let i = 0; i < gs.length; i += 3) parts.push(gs.slice(i, i + 3));
+  if (parts.length > 1 && parts[parts.length - 1].length < 3) {
+    const tail = parts.pop();
+    parts[parts.length - 1] = parts[parts.length - 1].concat(tail);
+  }
+  return parts.map((p) => p.join(""));
+}
+
+// Разбиение русского слова
+function splitCyrillic(gs) {
+  const word = gs.join("");
+  const low = gs.map((g) => g.toLowerCase());
+  const n = gs.length;
+  if (n <= 3 || DICT_RU.has(low.join(""))) return [word];
+
+  const startsAt = (piece, from) => from >= 0 && low.slice(from, from + piece.length).join("") === piece;
+  const pieces = [];
+  let start = 0;
+
+  // «не» в начале — только если за ним ещё приставка или длинный остаток
+  if (startsAt("не", 0)) {
+    const restLen = n - 2;
+    const nextPrefix = PREFIXES.some((p) => startsAt(p, 2) && restLen - p.length >= 4);
+    if (nextPrefix || restLen >= 6) {
+      pieces.push(gs.slice(0, 2).join(""));
+      start = 2;
+    }
+  }
+  // Одна приставка
+  for (const p of PREFIXES) {
+    if (startsAt(p, start) && n - start - p.length >= 4) {
+      pieces.push(gs.slice(start, start + p.length).join(""));
+      start += p.length;
+      break;
+    }
+  }
+  // Один суффикс
+  let end = n;
+  let suffix = "";
+  for (const sx of SUFFIXES) {
+    if (end - start - sx.length >= 3 && startsAt(sx, end - sx.length)) {
+      suffix = gs.slice(end - sx.length).join("");
+      end -= sx.length;
+      break;
+    }
+  }
+  const stem = gs.slice(start, end);
+  const peeled = start > 0 || suffix !== "";
+  const middle = (peeled && stem.length <= 6) ? [stem.join("")] : chunk3Glue(stem);
+  return pieces.concat(middle, suffix ? [suffix] : []);
+}
+
+// Токены одного куска (без ведущего пробела)
+function piecesOf(run) {
+  switch (run.kind) {
+    case "cyr":
+      return splitCyrillic(run.gs);
+    case "lat":
+    case "oth":
+      return run.gs.length <= 6 ? [run.gs.join("")] : chunk(run.gs, 4);
+    case "num":
+      return chunk(run.gs, 3);
+    case "emoji": {
+      const g = run.gs[0];
+      const cps = Array.from(g);
+      if (cps.filter((c) => c !== "\uFE0F").length > 1) return [cps[0], g.slice(cps[0].length)];
+      return [g];
+    }
+    default:
+      return [run.gs.join("")];
+  }
+}
+
+// Главная функция: текст → массив токенов {text, kind}
+function tokenize(text) {
+  const runs = toRuns(toGraphemes(String(text).normalize("NFC")));
+  const tokens = [];
+  let glue = false;
+  runs.forEach((run, i) => {
+    if (run.kind === "space") {
+      const next = runs[i + 1];
+      if (next && WORD_KINDS.has(next.kind) && run.gs[run.gs.length - 1] === " ") {
+        if (run.gs.length > 1) tokens.push({text: run.gs.slice(0, -1).join(""), kind: "space"});
+        glue = true;
+      } else {
+        tokens.push({text: run.gs.join(""), kind: "space"});
+      }
+      return;
+    }
+    piecesOf(run).forEach((p, k) => {
+      tokens.push({text: (glue && k === 0 ? " " : "") + p, kind: run.kind});
+    });
+    glue = false;
+  });
+  return tokens;
+}
+
+// Слова — куски между пробелами, где есть хотя бы одна буква или цифра
+function countWords(text) {
+  return String(text).split(/\s+/u).filter((w) => /[\p{L}\p{Nd}]/u.test(w)).length;
+}
+
+function countChars(text) {
+  return toGraphemes(String(text).normalize("NFC")).length;
+}
+
+// Псевдо-ID: детерминированный хэш FNV-1a строки токена → число 10–99999
+function pseudoId(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return 10 + (h % 99990);
+}
+// ===== УЧЕБНЫЙ ТОКЕНИЗАТОР: КОНЕЦ =====
+
+// ===== ИНТЕРФЕЙС =====
+const PRESETS = {
+  meet: "Встреча в 14:00",
+  task: "Кратко перескажи сообщение: учебная встреча перенесена со вторника 10:00 на среду 14:00. Место — кабинет 205. Укажи новое время и место.",
+  en: "The meeting is at 2 pm in room 205.",
+  long: "непредусмотрительность",
+  emoji: "Отлично 😊👍",
+};
+const MAX_SHOWN = 1500;
+
+const srcEl = document.getElementById("src");
+const tokensEl = document.getElementById("tokens");
+const nChars = document.getElementById("n-chars");
+const nWords = document.getElementById("n-words");
+const nTokens = document.getElementById("n-tokens");
+const nRatio = document.getElementById("n-ratio");
+const rememberBtn = document.getElementById("remember");
+const cmpA = document.getElementById("cmp-a");
+const cmpDiff = document.getElementById("cmp-diff");
+const liveEl = document.getElementById("live");
+const presetButtons = Array.from(document.querySelectorAll(".presets .choice-btn"));
+
+let memoryA = null;   // {count, text}
+let lastStats = {tokens: 0, words: 0, chars: 0};
+let liveTimer = 0;
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;"}[c]));
+}
+
+function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100;
+  const b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b === 1) return one;
+  if (b >= 2 && b <= 4) return few;
+  return many;
+}
+const tokenWord = (n) => plural(n, "токен", "токена", "токенов");
+const fmt = (n) => n.toLocaleString("ru-RU");
+
+// Короткая цитата для строки «A: …»
+function shorten(text, limit) {
+  const gs = toGraphemes(text.replace(/\s+/g, " ").trim());
+  if (!gs.length) return "пустой текст";
+  return gs.length > limit ? gs.slice(0, limit).join("").trimEnd() + "…" : gs.join("");
+}
+
+// Плашка одного токена
+function tokenHtml(t, i) {
+  let visible;
+  let spoken;
+  const ws = t.kind === "space" || t.kind === "nl";
+  if (t.kind === "space") {
+    visible = Array.from(t.text).map((c) => (c === "\t" ? "→" : "·")).join("");
+    spoken = "пробел";
+  } else if (t.kind === "nl") {
+    visible = "↵".repeat(Array.from(t.text.replace(/\r\n/g, "\n")).length);
+    spoken = "перевод строки";
+  } else if (t.text[0] === " ") {
+    visible = `<span class="sp" aria-hidden="true">·</span>${esc(t.text.slice(1))}`;
+    spoken = `пробел и ${t.text.slice(1)}`;
+  } else {
+    visible = esc(t.text);
+    spoken = t.text;
+  }
+  const inner = ws
+    ? `<span aria-hidden="true">${visible}</span><span class="sr-only">${spoken}</span>`
+    : (t.text[0] === " " ? `${visible}<span class="sr-only"> (с пробелом)</span>` : visible);
+  return `<span class="tk c${i % 6}${ws ? " ws" : ""}" role="listitem"><span class="tk-text">${inner}</span><span class="tk-id">${pseudoId(t.text)}</span></span>`;
+}
+
+function renderCompare() {
+  if (!memoryA) {
+    cmpA.textContent = "A пока не задано: зафиксируйте текущий счёт кнопкой выше.";
+    cmpDiff.innerHTML = "Разница с A: <b>—</b>";
+    return;
+  }
+  cmpA.textContent = `A: ${fmt(memoryA.count)} ${tokenWord(memoryA.count)} · «${shorten(memoryA.text, 30)}»`;
+  const d = lastStats.tokens - memoryA.count;
+  const shown = d > 0 ? `+${fmt(d)}` : d < 0 ? `−${fmt(-d)}` : "0";
+  const tail = d === 0 ? "токенов — столько же" : tokenWord(d);
+  cmpDiff.innerHTML = `Разница с A: <b>${shown}</b> ${tail}`;
+}
+
+function liveSummary() {
+  let msg = `Токенов: ${lastStats.tokens}. Слов: ${lastStats.words}. Символов: ${lastStats.chars}.`;
+  if (memoryA) {
+    const d = lastStats.tokens - memoryA.count;
+    msg += ` Разница с A: ${d > 0 ? "плюс " + d : d < 0 ? "минус " + -d : "0"} ${tokenWord(d)}.`;
+  }
+  return msg;
+}
+
+function announce(msg, delay) {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => { liveEl.textContent = msg; }, delay);
+}
+
+function render() {
+  const text = srcEl.value;
+  const tokens = tokenize(text);
+  const words = countWords(text);
+  const chars = countChars(text);
+  lastStats = {tokens: tokens.length, words, chars};
+
+  if (!tokens.length) {
+    tokensEl.innerHTML = `<span class="empty" role="listitem">Введите текст или выберите пример выше</span>`;
+  } else {
+    let html = tokens.slice(0, MAX_SHOWN).map(tokenHtml).join("");
+    if (tokens.length > MAX_SHOWN) {
+      html += `<span class="more" role="listitem">…и ещё ${fmt(tokens.length - MAX_SHOWN)} ${tokenWord(tokens.length - MAX_SHOWN)}</span>`;
+    }
+    tokensEl.innerHTML = html;
+  }
+
+  nChars.textContent = fmt(chars);
+  nWords.textContent = fmt(words);
+  nTokens.textContent = fmt(tokens.length);
+  nRatio.textContent = words ? (tokens.length / words).toFixed(1).replace(".", ",") : "—";
+
+  presetButtons.forEach((b) => {
+    const on = PRESETS[b.dataset.preset] === text;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+
+  renderCompare();
+}
+
+presetButtons.forEach((b) => {
+  b.addEventListener("click", () => {
+    srcEl.value = PRESETS[b.dataset.preset];
+    tokensEl.scrollTop = 0;
+    render();
+    announce(`Пример «${b.textContent}». ${liveSummary()}`, 150);
+  });
+});
+
+srcEl.addEventListener("input", () => {
+  render();
+  announce(liveSummary(), 800);
+});
+
+rememberBtn.addEventListener("click", () => {
+  memoryA = {count: lastStats.tokens, text: srcEl.value};
+  renderCompare();
+  announce(`Запомнено как A: ${memoryA.count} ${tokenWord(memoryA.count)}.`, 50);
+});
+
+srcEl.value = PRESETS.meet;
+render();
+</script>
+</body>
+</html>

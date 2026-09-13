@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Механизм внимания: кто такой «он»?</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --green:#10b981;
+  --amber:#f59e0b;
+  --amber-dk:#b45309;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --text:#0f172a;
+  --muted:#64748b;
+  --arc-h:178px;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin:2px 0 14px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Переключатель предложений */
+.picker{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.row-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-right:4px}
+.choice-btn{
+  padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.choice-btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.choice-btn.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+button:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+/* Основная сетка: сцена с нитями + таблица весов */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 288px;gap:14px;align-items:stretch}
+
+.stage{
+  border:1px solid var(--border);border-radius:14px;background:#f8fafc;
+  padding:10px 14px 10px;min-width:0;display:flex;flex-direction:column;
+}
+.legend{display:flex;flex-wrap:wrap;gap:2px 18px;font-size:.78rem;color:var(--muted);font-weight:600}
+.legend i{display:inline-block;vertical-align:middle;margin-right:6px;border-radius:4px;width:22px}
+.legend .lg-strong{height:6px;background:var(--amber)}
+.legend .lg-other{height:3px;background:var(--indigo);opacity:.65}
+.scroll{margin-top:auto;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.inner{position:relative;min-width:100%;width:max-content;padding-top:var(--arc-h)}
+.arcs{position:absolute;left:0;top:0;width:100%;height:var(--arc-h);overflow:visible;pointer-events:none}
+.arc{fill:none;stroke:var(--indigo);stroke-linecap:round}
+.arc.weak{stroke:var(--cyan)}
+.arc.top{stroke:var(--amber)}
+.dot{fill:var(--indigo)}
+.dot.weak{fill:var(--cyan)}
+.dot.top{fill:var(--amber)}
+.arc.draw{stroke-dasharray:1 2;stroke-dashoffset:1;animation:draw .55s ease-out forwards}
+.dot.draw{opacity:0;animation:fadein .3s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fadein{to{opacity:1}}
+
+.tokens{display:flex;justify-content:center;align-items:flex-start;gap:10px;padding:0 4px 2px}
+.tok{display:flex;flex-direction:column;align-items:center;position:relative}
+/* Знак препинания рисуем рядом с плашкой, но не делаем его отдельным словом */
+.tok[data-punct]::after{content:attr(data-punct);position:absolute;left:100%;top:6px;margin-left:1px;font-size:1.1rem;font-weight:700;color:var(--muted)}
+.word{
+  padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:1.05rem;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap;
+  transition:background .18s,border-color .18s,color .18s;
+}
+.word:hover{border-color:var(--indigo)}
+.word.top{background:var(--amber-lt);border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber);color:#92400e}
+.word.sel{background:var(--indigo);border-color:var(--indigo);box-shadow:none;color:#fff}
+.pct{font-size:.78rem;font-weight:800;color:var(--muted);margin-top:3px;min-height:1.2em;white-space:nowrap}
+.pct.top{color:var(--amber-dk)}
+.pct.sel{color:var(--indigo-dk)}
+.scroll-hint{font-size:.74rem;color:var(--muted);text-align:center;margin-top:4px}
+
+/* Боковая панель */
+.side{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:#fff;display:flex;flex-direction:column}
+.side-title{font-weight:800;font-size:.92rem;margin-bottom:6px}
+.wtable{width:100%;border-collapse:collapse;font-size:.85rem}
+.wtable th,.wtable td{padding:3px 0;vertical-align:middle}
+.wtable th{text-align:left;font-weight:700;white-space:nowrap;padding-right:8px;width:1%}
+.wtable td.num{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;width:1%;padding-left:8px;white-space:nowrap}
+.bar{display:block;height:8px;border-radius:100px;background:var(--indigo-lt);overflow:hidden}
+.bar span{display:block;height:100%;border-radius:100px;background:linear-gradient(90deg,var(--indigo),var(--cyan))}
+.wtable tr.top th,.wtable tr.top td.num{color:var(--amber-dk)}
+.wtable tr.top .bar{background:var(--amber-lt)}
+.wtable tr.top .bar span{background:var(--amber)}
+.verdict{
+  margin-top:auto;background:var(--indigo-lt);border-radius:10px;padding:10px 12px;
+  font-size:.86rem;font-weight:600;color:#312e81;line-height:1.45;
+}
+.side .wtable{margin-bottom:10px}
+
+.note{font-size:.76rem;color:var(--muted);margin-top:10px}
+
+@media (max-width:760px){
+  :root{--arc-h:150px}
+  body{padding:16px 14px 20px}
+  .layout{grid-template-columns:1fr}
+  .word{font-size:1rem;padding:7px 10px}
+  .tokens{gap:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  .arc.draw{stroke-dasharray:none;stroke-dashoffset:0}
+  .dot.draw{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<h1>Механизм внимания: кто такой «он»?</h1>
+<p class="sub">Трансформер смотрит на всё предложение сразу и прокладывает «нити» между словами. Нажмите на любое слово: чем толще нить, тем сильнее смысловая связь.</p>
+
+<div class="picker" role="group" aria-label="Выбор предложения">
+  <span class="row-label">Предложение</span>
+  <button type="button" class="choice-btn active" data-s="a" aria-pressed="true">А · Заяц убежал</button>
+  <button type="button" class="choice-btn" data-s="b" aria-pressed="false">Б · Заяц не убежал</button>
+  <button type="button" class="choice-btn" data-s="c" aria-pressed="false">В · Кошка устала</button>
+</div>
+
+<div class="layout">
+  <div class="stage">
+    <div class="legend" aria-hidden="true">
+      <span><i class="lg-strong"></i>самая сильная связь</span>
+      <span><i class="lg-other"></i>остальные связи — толщина по силе</span>
+    </div>
+    <div class="scroll" id="scroll">
+      <div class="inner" id="inner">
+        <svg class="arcs" id="arcs" aria-hidden="true" focusable="false"></svg>
+        <div class="tokens" id="tokens" role="group" aria-label="Слова предложения — выберите слово"></div>
+      </div>
+    </div>
+    <div class="scroll-hint" id="scroll-hint" hidden>← предложение прокручивается вбок →</div>
+  </div>
+
+  <aside class="side">
+    <div class="side-title" id="side-title">Куда смотрит слово «он»</div>
+    <table class="wtable">
+      <caption class="sr-only" id="table-caption">Веса внимания выбранного слова</caption>
+      <thead class="sr-only"><tr><th scope="col">Слово</th><th scope="col">Сила связи</th><th scope="col">Доля</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="verdict" id="verdict" aria-live="polite"></p>
+  </aside>
+</div>
+
+<p class="note">Веса условные, для иллюстрации. В реальной модели десятки слоёв и «голов» внимания, каждая смотрит на связи по-своему.</p>
+
+<script>
+// Учебные данные. Для каждого слова (строка «кто смотрит») — доли внимания к остальным словам, в сумме 100%.
+// Числа придуманы для наглядности: глагол смотрит на подлежащее и дополнение, предлог — на своё существительное,
+// местоимение — на того, кого оно заменяет.
+const SENTENCES = {
+  a: {
+    tokens: ["Заяц", "убежал", "от", "волка", "потому что", "он", "был", "быстрым"],
+    punct: {"волка": ","},
+    focus: "он",
+    weights: {
+      "Заяц":       {"убежал": 40, "он": 22, "волка": 12, "быстрым": 12, "был": 6, "потому что": 4, "от": 4},
+      "убежал":     {"Заяц": 45, "от": 20, "волка": 20, "потому что": 8, "быстрым": 4, "он": 2, "был": 1},
+      "от":         {"волка": 58, "убежал": 30, "Заяц": 6, "потому что": 3, "он": 1, "был": 1, "быстрым": 1},
+      "волка":      {"от": 36, "убежал": 34, "Заяц": 18, "он": 6, "потому что": 3, "был": 2, "быстрым": 1},
+      "потому что": {"убежал": 30, "был": 26, "быстрым": 20, "он": 12, "Заяц": 6, "волка": 4, "от": 2},
+      "он":         {"Заяц": 62, "волка": 18, "убежал": 8, "быстрым": 7, "потому что": 3, "был": 2},
+      "был":        {"он": 44, "быстрым": 36, "потому что": 8, "Заяц": 6, "убежал": 3, "волка": 2, "от": 1},
+      "быстрым":    {"он": 38, "был": 26, "Заяц": 18, "убежал": 10, "потому что": 4, "волка": 3, "от": 1},
+    },
+    notes: {
+      "Заяц": "«Заяц» смотрит на своё действие «убежал» и на «он» — это один и тот же персонаж.",
+      "убежал": "Глагол «убежал» ищет, кто действует — «Заяц», и от кого — «от волка».",
+      "от": "Предлог «от» смотрит на своё существительное — «волка» — и на глагол «убежал».",
+      "волка": "«волка» держится за предлог «от» и глагол «убежал»: от кого убежал.",
+      "потому что": "Связка «потому что» соединяет событие («убежал») с причиной («был быстрым»).",
+      "он": "Модель связывает «он» с «заяц»: быстрым был тот, кто убежал.",
+      "был": "«был» смотрит на «он» и «быстрым»: кто был и каким.",
+      "быстрым": "«быстрым» ищет, кто быстрый: «он», а через него — «Заяц».",
+    },
+  },
+  b: {
+    tokens: ["Заяц", "не", "убежал", "от", "волка", "потому что", "он", "был", "быстрым"],
+    punct: {"волка": ","},
+    focus: "он",
+    weights: {
+      "Заяц":       {"убежал": 34, "не": 16, "он": 16, "волка": 14, "быстрым": 8, "был": 5, "потому что": 4, "от": 3},
+      "не":         {"убежал": 64, "Заяц": 12, "потому что": 8, "волка": 6, "он": 4, "быстрым": 3, "от": 2, "был": 1},
+      "убежал":     {"Заяц": 36, "не": 26, "от": 14, "волка": 14, "потому что": 5, "он": 2, "быстрым": 2, "был": 1},
+      "от":         {"волка": 56, "убежал": 28, "не": 6, "Заяц": 5, "потому что": 2, "он": 1, "был": 1, "быстрым": 1},
+      "волка":      {"от": 32, "убежал": 26, "он": 18, "Заяц": 12, "не": 6, "быстрым": 3, "был": 2, "потому что": 1},
+      "потому что": {"убежал": 24, "не": 22, "был": 22, "быстрым": 18, "он": 8, "Заяц": 3, "волка": 2, "от": 1},
+      "он":         {"волка": 58, "Заяц": 21, "не": 9, "убежал": 6, "быстрым": 4, "был": 2},
+      "был":        {"он": 44, "быстрым": 36, "потому что": 8, "волка": 6, "Заяц": 3, "не": 1, "убежал": 1, "от": 1},
+      "быстрым":    {"он": 36, "был": 26, "волка": 20, "не": 8, "убежал": 6, "потому что": 2, "Заяц": 1, "от": 1},
+    },
+    notes: {
+      "Заяц": "«Заяц» смотрит на «убежал» и на «не»: заяц — тот, у кого действие не случилось.",
+      "не": "Частица «не» почти целиком смотрит на «убежал» — она переворачивает смысл глагола.",
+      "убежал": "«убежал» смотрит на «Заяц» и на «не»: кто действует и что действия не было.",
+      "от": "Предлог «от» смотрит на своё существительное — «волка».",
+      "волка": "«волка» держится за «от» и «убежал», но теперь заметно связан и с «он».",
+      "потому что": "«потому что» связывает «не убежал» с причиной — «был быстрым».",
+      "он": "Модель связывает «он» с «волка»: раз заяц не убежал, быстрым был волк. Одно «не» перестроило связи.",
+      "был": "«был» смотрит на «он» и «быстрым»: кто был и каким.",
+      "быстрым": "«быстрым» ищет, кто быстрый: «он», а через него — уже «волка».",
+    },
+  },
+  c: {
+    tokens: ["Кошка", "сидит", "на", "ковре", "потому что", "она", "устала"],
+    punct: {"ковре": ","},
+    focus: "она",
+    weights: {
+      "Кошка":      {"сидит": 42, "она": 24, "устала": 18, "ковре": 8, "на": 4, "потому что": 4},
+      "сидит":      {"Кошка": 48, "на": 22, "ковре": 18, "потому что": 6, "устала": 4, "она": 2},
+      "на":         {"ковре": 64, "сидит": 26, "Кошка": 6, "потому что": 2, "она": 1, "устала": 1},
+      "ковре":      {"на": 46, "сидит": 32, "Кошка": 16, "устала": 3, "она": 2, "потому что": 1},
+      "потому что": {"сидит": 34, "устала": 30, "она": 16, "Кошка": 12, "ковре": 6, "на": 2},
+      "она":        {"Кошка": 64, "ковре": 14, "сидит": 9, "устала": 8, "на": 3, "потому что": 2},
+      "устала":     {"она": 46, "Кошка": 28, "сидит": 12, "потому что": 10, "ковре": 3, "на": 1},
+    },
+    notes: {
+      "Кошка": "«Кошка» смотрит на своё действие «сидит» и на «она» — это один и тот же персонаж.",
+      "сидит": "Глагол «сидит» ищет, кто сидит — «Кошка», и где — «на ковре».",
+      "на": "Предлог «на» смотрит на своё существительное — «ковре».",
+      "ковре": "«ковре» держится за предлог «на» и глагол «сидит»: где сидит.",
+      "потому что": "«потому что» соединяет событие («сидит») с причиной («устала»).",
+      "она": "Модель связывает «она» с «кошка»: устать может кошка, а не ковёр.",
+      "устала": "«устала» ищет, кто устал: «она», а через неё — «Кошка».",
+    },
+  },
+};
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const scrollEl = document.getElementById("scroll");
+const innerEl = document.getElementById("inner");
+const arcsEl = document.getElementById("arcs");
+const tokensEl = document.getElementById("tokens");
+const hintEl = document.getElementById("scroll-hint");
+const rowsEl = document.getElementById("rows");
+const sideTitleEl = document.getElementById("side-title");
+const captionEl = document.getElementById("table-caption");
+const verdictEl = document.getElementById("verdict");
+
+let current = "a";
+let selected = SENTENCES.a.focus;
+
+// Экранирование текста для вставки в HTML
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;"}[c]));
+}
+
+// Самое сильное слово в карте весов
+function topOf(map) {
+  let best = null;
+  Object.keys(map).forEach((k) => { if (best === null || map[k] > map[best]) best = k; });
+  return best;
+}
+
+// Отрисовка плашек-слов для текущего предложения
+function renderTokens() {
+  const s = SENTENCES[current];
+  tokensEl.innerHTML = s.tokens.map((t, i) => {
+    const punct = s.punct[t] ? ` data-punct="${esc(s.punct[t])}"` : "";
+    return `<div class="tok"${punct}><button type="button" class="word" data-i="${i}" aria-pressed="false">${esc(t)}</button><span class="pct" aria-hidden="true"></span></div>`;
+  }).join("");
+  tokensEl.querySelectorAll(".word").forEach((btn) => {
+    btn.addEventListener("click", () => select(SENTENCES[current].tokens[+btn.dataset.i], true));
+    btn.addEventListener("keydown", onWordKey);
+  });
+}
+
+// Стрелки влево/вправо, Home/End — перемещение по словам
+function onWordKey(e) {
+  const s = SENTENCES[current];
+  const i = +e.currentTarget.dataset.i;
+  let next = null;
+  if (e.key === "ArrowRight") next = Math.min(s.tokens.length - 1, i + 1);
+  else if (e.key === "ArrowLeft") next = Math.max(0, i - 1);
+  else if (e.key === "Home") next = 0;
+  else if (e.key === "End") next = s.tokens.length - 1;
+  if (next === null || next === i) return;
+  e.preventDefault();
+  select(s.tokens[next], true);
+  tokensEl.querySelector(`.word[data-i="${next}"]`).focus();
+}
+
+// Выбор слова: подсветка плашек, таблица, вывод, дуги
+function select(word, animate) {
+  selected = word;
+  const s = SENTENCES[current];
+  const map = s.weights[word];
+  const top = topOf(map);
+
+  tokensEl.querySelectorAll(".tok").forEach((tok) => {
+    const btn = tok.querySelector(".word");
+    const pct = tok.querySelector(".pct");
+    const t = s.tokens[+btn.dataset.i];
+    const isSel = t === word;
+    const isTop = t === top;
+    btn.classList.toggle("sel", isSel);
+    btn.classList.toggle("top", isTop);
+    btn.setAttribute("aria-pressed", isSel ? "true" : "false");
+    btn.setAttribute("aria-label", isSel ? `${t} — выбрано` : `${t}: ${map[t] || 0}% внимания`);
+    pct.className = "pct" + (isSel ? " sel" : isTop ? " top" : "");
+    pct.textContent = isSel ? "выбрано" : (map[t] ? `${map[t]}%` : "≈0%");
+  });
+
+  const sorted = Object.keys(map).sort((x, y) => map[y] - map[x]);
+  const max = map[sorted[0]];
+  sideTitleEl.textContent = `Куда смотрит слово «${word}»`;
+  captionEl.textContent = `Веса внимания слова «${word}», по убыванию`;
+  rowsEl.innerHTML = sorted.map((k) =>
+    `<tr class="${k === top ? "top" : ""}"><th scope="row">${esc(k)}</th><td><span class="bar"><span style="width:${(map[k] / max * 100).toFixed(1)}%"></span></span></td><td class="num">${map[k]}%</td></tr>`
+  ).join("");
+
+  verdictEl.innerHTML = `<span class="sr-only">Слово «${esc(word)}» сильнее всего смотрит на «${esc(top)}» — ${map[top]}%. </span>${esc(s.notes[word])}`;
+
+  drawArcs(animate && !reduceMotion);
+}
+
+// Дуги-«нити» от выбранного слова ко всем остальным.
+// Координаты считаются через getBoundingClientRect относительно .inner — поэтому
+// горизонтальная прокрутка на узком экране не ломает рисунок.
+function drawArcs(animate) {
+  const s = SENTENCES[current];
+  const map = s.weights[selected];
+  const top = topOf(map);
+  const innerRect = innerEl.getBoundingClientRect();
+  const arcH = arcsEl.getBoundingClientRect().height;
+  const buttons = Array.from(tokensEl.querySelectorAll(".word"));
+  const selIndex = s.tokens.indexOf(selected);
+  const selRect = buttons[selIndex].getBoundingClientRect();
+  const selX = selRect.left + selRect.width / 2 - innerRect.left;
+  const y = selRect.top - innerRect.top - 4;
+  const maxH = Math.max(20, (arcH - 10) / 0.75);
+
+  while (arcsEl.firstChild) arcsEl.removeChild(arcsEl.firstChild);
+
+  // Слабые связи рисуем первыми, сильные — поверх
+  const targets = Object.keys(map).filter((k) => map[k] > 0).sort((x, y2) => map[x] - map[y2]);
+  const centers = {};
+  targets.forEach((t) => {
+    const r = buttons[s.tokens.indexOf(t)].getBoundingClientRect();
+    centers[t] = r.left + r.width / 2 - innerRect.left;
+  });
+  // Высота дуги растёт с расстоянием: самая дальняя нить — под потолок, соседние — пониже,
+  // так дуги не сливаются наверху
+  const maxDx = Math.max(1, ...targets.map((t) => Math.abs(centers[t] - selX)));
+  targets.forEach((t, order) => {
+    const w = map[t];
+    const x2 = centers[t];
+    const dx = x2 - selX;
+    // Начало нити чуть смещаем к её стороне, чтобы пучок не сливался в одну точку
+    const x1 = selX + Math.max(-selRect.width * 0.35, Math.min(selRect.width * 0.35, dx * 0.08));
+    const h = 22 + (maxH - 22) * Math.pow(Math.abs(dx) / maxDx, 0.85);
+    const cls = t === top ? "top" : (w < 10 ? "weak" : "");
+
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", `M${x1.toFixed(1)} ${y.toFixed(1)} C${x1.toFixed(1)} ${(y - h).toFixed(1)}, ${x2.toFixed(1)} ${(y - h).toFixed(1)}, ${x2.toFixed(1)} ${y.toFixed(1)}`);
+    path.setAttribute("class", `arc ${cls}${animate ? " draw" : ""}`);
+    path.setAttribute("stroke-width", (1.5 + w * 0.15).toFixed(2));
+    path.setAttribute("opacity", (t === top ? 0.95 : 0.3 + 0.6 * (w / 100) / (map[top] / 100)).toFixed(2));
+    path.setAttribute("pathLength", "1");
+    if (animate) path.style.animationDelay = `${order * 40}ms`;
+    arcsEl.appendChild(path);
+
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("cx", x2.toFixed(1));
+    dot.setAttribute("cy", y.toFixed(1));
+    dot.setAttribute("r", Math.max(2.5, (1.5 + w * 0.15) / 2 + 1).toFixed(1));
+    dot.setAttribute("class", `dot ${cls}${animate ? " draw" : ""}`);
+    if (animate) dot.style.animationDelay = `${order * 40 + 350}ms`;
+    arcsEl.appendChild(dot);
+  });
+
+  hintEl.hidden = !(scrollEl.scrollWidth > scrollEl.clientWidth + 2);
+}
+
+// Смена предложения
+function setSentence(key) {
+  current = key;
+  document.querySelectorAll(".picker .choice-btn").forEach((b) => {
+    const on = b.dataset.s === key;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  renderTokens();
+  select(SENTENCES[key].focus, true);
+}
+
+document.querySelectorAll(".picker .choice-btn").forEach((b) => {
+  b.addEventListener("click", () => setSentence(b.dataset.s));
+});
+
+// Перерисовка дуг при изменении размеров (без анимации)
+let resizeFrame = 0;
+function scheduleRedraw() {
+  cancelAnimationFrame(resizeFrame);
+  resizeFrame = requestAnimationFrame(() => drawArcs(false));
+}
+window.addEventListener("resize", scheduleRedraw);
+if (typeof ResizeObserver !== "undefined") {
+  // Первый вызов наблюдателя приходит сразу после подключения — пропускаем его, чтобы не сбить стартовую анимацию
+  let lastWidth = -1;
+  new ResizeObserver(() => {
+    const w = scrollEl.clientWidth;
+    if (lastWidth === -1) { lastWidth = w; return; }
+    if (w === lastWidth) return;
+    lastWidth = w;
+    scheduleRedraw();
+  }).observe(scrollEl);
+}
+
+renderTokens();
+select(selected, true);
+</script>
+</body>
+</html>

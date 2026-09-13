@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Урок 1 — Как устроен современный ИИ</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧠%3C/text%3E%3C/svg%3E">
+<meta name="description" content="Интерактивный лонгрид урока 1 курса ДПО-1 «Основы применения ИИ»: история ИИ, трансформер, токены, промпт, контекстное окно и выбор нейросети под задачу.">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f7;
+  --card:#ffffff;
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --cyan-lt:#e0f2fe;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --green:#16a34a;
+  --green-lt:#f0fdf4;
+  --red:#dc2626;
+  --red-lt:#fef2f2;
+  --text:#0f172a;
+  --muted:#64748b;
+  --nav-h:56px;
+}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(99,102,241,.14),transparent 32%),
+    radial-gradient(circle at 85% 6%,rgba(14,165,233,.13),transparent 34%),
+    linear-gradient(180deg,#f8fafc 0%,#eef2ff 30%,#f8fafc 100%);
+  color:var(--text);
+  line-height:1.65;
+  overflow-x:hidden;
+}
+section[id],header[id]{scroll-margin-top:calc(var(--nav-h) + 8px)}
+
+/* NAV */
+nav.top{
+  position:fixed;top:0;left:0;right:0;height:var(--nav-h);
+  background:rgba(255,255,255,.97);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);box-shadow:0 1px 10px rgba(0,0,0,.06);
+  display:flex;align-items:center;padding:0 20px;z-index:900;
+  gap:2px;overflow-x:auto;scrollbar-width:none;
+}
+nav.top::-webkit-scrollbar{display:none}
+.nav-logo{font-weight:900;font-size:.93rem;color:var(--indigo-dk);white-space:nowrap;margin:0 10px 0 4px;flex-shrink:0}
+.nav-sep{width:1px;height:18px;background:var(--border);margin:0 6px;flex-shrink:0}
+.nav-link{padding:5px 10px;border-radius:6px;font-size:.75rem;font-weight:700;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .2s,background .2s;flex-shrink:0}
+.nav-link:hover,.nav-link.active{color:var(--indigo);background:var(--indigo-lt)}
+.nav-link:focus-visible,a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+
+/* HERO */
+#hero{
+  min-height:100vh;padding:calc(var(--nav-h) + 56px) 24px 64px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+}
+.hero-badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:22px}
+.hero-badge{padding:5px 14px;background:var(--indigo-lt);border:1px solid #c7d2fe;border-radius:100px;font-size:.78rem;font-weight:700;color:var(--indigo-dk)}
+.hero-title{font-size:clamp(2rem,5.5vw,3.6rem);font-weight:900;line-height:1.12;letter-spacing:-1.5px;margin-bottom:16px;max-width:900px}
+.hero-title em{color:var(--indigo);font-style:normal}
+.hero-sub{font-size:1.05rem;color:var(--muted);max-width:700px;margin-bottom:36px}
+.hero-img{max-width:900px;width:100%;margin-bottom:40px}
+.hero-nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:860px}
+.hero-nav a{padding:8px 16px;border-radius:10px;background:var(--card);border:1px solid var(--border);font-size:.82rem;font-weight:600;color:var(--text);text-decoration:none;box-shadow:0 2px 8px rgba(15,23,42,.05);transition:transform .15s,box-shadow .15s}
+.hero-nav a:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.15)}
+
+/* SECTIONS */
+.sec{max-width:1180px;margin:0 auto;padding:72px 24px}
+.sec-head{margin-bottom:36px}
+.num-badge{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:13px;font-size:1.1rem;font-weight:900;color:#fff;margin-bottom:14px}
+.n1{background:linear-gradient(135deg,#6366f1,#818cf8)}
+.n2{background:linear-gradient(135deg,#0ea5e9,#38bdf8)}
+.n3{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}
+.n4{background:linear-gradient(135deg,#16a34a,#4ade80)}
+.n5{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
+.n6{background:linear-gradient(135deg,#ec4899,#f472b6)}
+.n7{background:linear-gradient(135deg,#dc2626,#f87171)}
+.n8{background:linear-gradient(135deg,#0891b2,#22d3ee)}
+.n9{background:linear-gradient(135deg,#4338ca,#6366f1)}
+.n10{background:linear-gradient(135deg,#ea580c,#fb923c)}
+.n11{background:linear-gradient(135deg,#6366f1,#818cf8)}
+.sec-title{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-.5px;margin-bottom:10px}
+.sec-desc{font-size:1rem;color:var(--muted);max-width:780px;line-height:1.75}
+.sec-time{display:inline-block;margin-left:10px;padding:3px 10px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:.74rem;font-weight:700;color:var(--muted);vertical-align:middle}
+.sub-title{font-size:clamp(1.1rem,2vw,1.35rem);font-weight:800;margin:40px 0 14px;letter-spacing:-.2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.card-title{font-weight:800;margin-bottom:10px;font-size:1rem}
+.muted{color:var(--muted)}
+.mt{margin-top:24px}
+.mb{margin-bottom:24px}
+.lead-p{max-width:820px;font-size:1rem;line-height:1.75;margin-bottom:18px}
+
+/* CARD GRIDS */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.grid .c-name{font-weight:800;margin-bottom:8px;font-size:.96rem}
+.grid p:not(.c-name){color:var(--muted);font-size:.9rem;line-height:1.6}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:820px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* LISTS */
+.dash-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.dash-list li{padding-left:22px;position:relative;font-size:.93rem;line-height:1.6}
+.dash-list li::before{content:"—";position:absolute;left:0;color:var(--indigo)}
+.step-list{list-style:none;counter-reset:pstep;display:flex;flex-direction:column;gap:10px}
+.step-list li{counter-increment:pstep;padding-left:32px;position:relative;font-size:.93rem;line-height:1.6}
+.step-list li::before{content:counter(pstep);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;background:var(--indigo);color:#fff;font-size:.74rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+/* CALLOUTS */
+.note-callout{background:var(--indigo-lt);border:1px solid #c7d2fe;border-radius:14px;padding:16px 20px;margin:20px 0}
+.note-callout p{color:var(--indigo-dk);font-size:.94rem;line-height:1.7}
+.note-callout p+p{margin-top:8px}
+.warn-callout{background:var(--amber-lt);border:1px solid #fcd34d;border-radius:16px;padding:18px 22px;margin:20px 0}
+.warn-callout p,.warn-callout li{color:#78350f;line-height:1.7;font-size:.93rem}
+.warn-callout p strong:first-child{display:block;margin-bottom:4px}
+.danger-callout{background:var(--red-lt);border:1px solid #fecaca;border-radius:16px;padding:18px 22px;margin:20px 0}
+.danger-callout p{color:#991b1b;line-height:1.7;font-size:.94rem}
+.ok-callout{background:var(--green-lt);border:1px solid #bbf7d0;border-radius:16px;padding:18px 22px;margin:20px 0}
+.ok-callout p{color:#166534;line-height:1.7;font-size:.94rem}
+.key-callout{border-left:4px solid var(--indigo);background:#fff;border-radius:0 14px 14px 0;padding:18px 22px;margin:22px 0;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.key-callout p{font-size:1.02rem;font-weight:700;line-height:1.6}
+.key-callout p span{color:var(--indigo)}
+.quote-box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin:22px 0;font-style:italic;color:#334155;line-height:1.75;position:relative}
+.quote-box::before{content:"«";position:absolute;left:10px;top:-6px;font-size:2.6rem;color:#c7d2fe;font-style:normal;font-weight:900}
+.src-note{font-size:.8rem;color:var(--muted);margin-top:10px;line-height:1.6}
+
+/* METAPHOR */
+.metaphor{display:flex;gap:16px;align-items:flex-start;background:linear-gradient(135deg,#eef2ff,#e0f2fe);border:1px solid #c7d2fe;border-radius:16px;padding:18px 22px;margin:20px 0}
+.metaphor .m-ico{font-size:1.8rem;line-height:1;flex-shrink:0}
+.metaphor p{font-size:.95rem;line-height:1.7;color:#1e293b}
+.metaphor p+p{margin-top:6px}
+.metaphor b.m-name{display:block;color:var(--indigo-dk);margin-bottom:4px}
+
+/* BEFORE / AFTER */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+@media (max-width:760px){.duo{grid-template-columns:1fr}}
+.duo-box{border-radius:14px;padding:16px 20px;border:1px solid var(--border);background:#fff}
+.duo-box .d-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.duo-box.bad{border-color:#fecaca;background:#fff7f7}
+.duo-box.bad .d-label{color:var(--red)}
+.duo-box.good{border-color:#bbf7d0;background:#f7fef9}
+.duo-box.good .d-label{color:var(--green)}
+.duo-box p{font-size:.92rem;line-height:1.65}
+.duo-box p+p{margin-top:8px}
+.duo-box .d-res{color:var(--muted);font-size:.86rem}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;margin:18px 0;border:1px solid var(--border);border-radius:14px;background:#fff}
+table.t{width:100%;border-collapse:collapse;font-size:.88rem}
+table.t caption{text-align:left;font-weight:700;padding:12px 16px;background:#f8fafc;border-bottom:1px solid var(--border);caption-side:top}
+table.t th{text-align:left;padding:10px 14px;background:var(--indigo-lt);color:var(--indigo-dk);font-weight:700;vertical-align:bottom}
+table.t td{padding:10px 14px;border-top:1px solid var(--border);vertical-align:top;line-height:1.55}
+table.t.wide{min-width:980px;font-size:.83rem}
+table.t.wide td:first-child{font-weight:700;white-space:nowrap}
+
+/* ACCORDION */
+details.acc{background:#fff;border:1px solid var(--border);border-radius:14px;margin:10px 0;overflow:hidden}
+details.acc>summary{cursor:pointer;list-style:none;padding:14px 20px;font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:10px}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary::before{content:"+";display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--indigo-lt);color:var(--indigo);font-weight:900;flex-shrink:0}
+details.acc[open]>summary::before{content:"−"}
+details.acc>summary:hover{background:#f8fafc}
+.acc-body{padding:4px 22px 18px 52px;font-size:.92rem;line-height:1.7}
+.acc-body p+p,.acc-body p+ul,.acc-body ul+p{margin-top:8px}
+@media (max-width:600px){.acc-body{padding:4px 18px 16px}}
+
+/* IMAGE CARD + PLACEHOLDER */
+.img-card{position:relative;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,.12);cursor:zoom-in;background:#fff}
+.img-card img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+.img-card .img-missing-caption{display:none}
+.img-card.img-missing{border:2px dashed var(--border);background:var(--indigo-lt);min-height:220px;display:flex;align-items:center;justify-content:center;box-shadow:none;cursor:default}
+.img-card.img-missing img{display:none}
+.img-card.img-missing .img-missing-caption{display:block;color:var(--muted);font-size:.85rem;text-align:center;padding:24px;max-width:340px}
+.img-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+@media (max-width:760px){.img-row{grid-template-columns:1fr}}
+.img-single{margin:28px 0}
+
+/* VIZ CARD (iframe) */
+.viz{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07);margin:24px 0}
+.viz-bar{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#f8fafc;border-bottom:1px solid var(--border)}
+.dots{display:flex;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dr{background:#ff5f57}.dy{background:#febb2c}.dg{background:#27c840}
+.viz-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viz-fs{display:flex;align-items:center;gap:5px;padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:.71rem;font-weight:600;color:var(--muted);cursor:pointer;transition:background .2s,color .2s,border-color .2s;white-space:nowrap}
+.viz-fs:hover{background:var(--indigo-lt);color:var(--indigo);border-color:#c7d2fe}
+.viz iframe{width:100%;border:none;display:block}
+.viz-hint{font-size:.85rem;color:var(--muted);margin:-12px 0 20px}
+
+/* PROMPT BOX */
+.prompt-box{background:#0f172a;border-radius:14px;overflow:hidden;margin:18px 0}
+.prompt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#1e293b;color:#e2e8f0;font-size:.82rem;font-weight:700}
+.copy-btn{padding:5px 12px;border-radius:8px;border:1px solid #475569;background:transparent;color:#e2e8f0;font-size:.76rem;font-weight:700;cursor:pointer;transition:background .2s;flex-shrink:0}
+.copy-btn:hover{background:#334155}
+.prompt-box pre{margin:0;padding:18px 16px;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:.9rem;line-height:1.65;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+
+/* CHIPS / LETTERS */
+.letter-card{text-align:left}
+.letter-card .big-letter{font-size:2.4rem;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--indigo),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
+.letter-card .l-word{font-weight:800;margin-bottom:6px}
+.letter-card p:not(.l-word){color:var(--muted);font-size:.9rem;line-height:1.6}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0}
+.flow span{padding:7px 14px;border-radius:100px;background:#fff;border:1px solid #c7d2fe;font-weight:700;font-size:.86rem;color:var(--indigo-dk)}
+.flow i{font-style:normal;color:var(--indigo);font-weight:900}
+.status{display:inline-block;padding:2px 9px;border-radius:100px;font-size:.74rem;font-weight:800;margin-right:6px;white-space:nowrap}
+.status.ok{background:var(--green-lt);color:var(--green)}
+.status.warn{background:var(--amber-lt);color:#b45309}
+.status.no{background:var(--red-lt);color:var(--red)}
+.svc-link{color:var(--indigo);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.links-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.links-list li{font-size:.92rem;line-height:1.6;padding-left:22px;position:relative}
+.links-list li::before{content:"↗";position:absolute;left:0;color:var(--indigo);font-weight:800}
+
+/* LIGHTBOX */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.92);z-index:2000;display:flex;align-items:center;justify-content:center;padding:32px;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:auto}
+.overlay img{max-width:100%;max-height:100%;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.overlay-close{position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.overlay-close:hover{background:rgba(255,255,255,.22)}
+.overlay-download{position:absolute;top:18px;right:72px;height:40px;padding:0 16px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;z-index:2}
+.overlay-download:hover{background:rgba(255,255,255,.22)}
+
+/* FULLSCREEN IFRAME OVERLAY */
+#fs-overlay{position:fixed;inset:0;background:rgba(2,6,23,.94);z-index:2100;display:none;flex-direction:column}
+#fs-overlay.open{display:flex}
+#fs-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08)}
+#fs-title{font-size:.8rem;font-weight:700;color:rgba(255,255,255,.65);flex:1}
+#fs-close{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.8);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#fs-close:hover{background:rgba(255,255,255,.2)}
+#fs-frame{flex:1;border:none;background:#fff}
+
+/* CHECKLIST */
+.checklist-progress-bar{height:10px;border-radius:100px;background:var(--indigo-lt);overflow:hidden;margin-bottom:20px}
+.checklist-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--indigo),var(--cyan));border-radius:100px;transition:width .3s ease}
+.checklist-count{font-size:.85rem;font-weight:700;color:var(--muted);margin:-12px 0 16px}
+.check-group{margin-bottom:22px}
+.check-group:last-of-type{margin-bottom:0}
+.check-group h3{font-size:.8rem;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px}
+.checklist-items{list-style:none;display:flex;flex-direction:column;gap:12px}
+.checklist-items label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:.95rem;line-height:1.5}
+.checklist-items input{width:18px;height:18px;accent-color:var(--indigo);cursor:pointer;flex-shrink:0;margin-top:2px}
+.checklist-done{margin-top:18px;padding:12px 16px;background:var(--green-lt);color:var(--green);border-radius:10px;font-weight:700}
+.checklist-reset{margin-top:16px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--muted);font-size:.8rem;font-weight:700;cursor:pointer}
+.checklist-reset:hover{color:var(--indigo);border-color:#c7d2fe}
+
+/* QUIZ */
+.quiz{display:flex;flex-direction:column;gap:18px}
+.quiz-question{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
+.quiz-text{font-weight:700;margin-bottom:12px}
+.quiz-options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.quiz-options label{display:flex;align-items:flex-start;gap:8px;font-size:.93rem;cursor:pointer;line-height:1.5}
+.quiz-options label.quiz-correct-answer{color:var(--green);font-weight:700}
+.quiz-options input{accent-color:var(--indigo);margin-top:4px;flex-shrink:0}
+.quiz-check{padding:8px 16px;border-radius:9px;border:none;background:var(--indigo);color:#fff;font-weight:700;font-size:.82rem;cursor:pointer}
+.quiz-check:hover{background:var(--indigo-dk)}
+.quiz-check:disabled{background:#cbd5e1;cursor:default}
+.quiz-feedback{margin-top:12px;padding:10px 14px;border-radius:8px;font-size:.9rem;line-height:1.6}
+.quiz-feedback.correct{background:var(--green-lt);color:var(--green)}
+.quiz-feedback.incorrect{background:var(--red-lt);color:var(--red)}
+.quiz-score-box{text-align:center;font-weight:800;color:var(--indigo-dk)}
+
+/* CONCLUSION */
+.conclusion-list{list-style:none;counter-reset:concl;display:flex;flex-direction:column;gap:14px;margin-bottom:28px}
+.conclusion-list li{counter-increment:concl;padding-left:38px;position:relative;font-size:1rem;line-height:1.65}
+.conclusion-list li::before{content:counter(concl);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--indigo);color:#fff;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+/* SCROLL REVEAL */
+.fade{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+.fade.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.fade{opacity:1;transform:none;transition:none}}
+@media (max-width:900px){.sec{padding:56px 18px}}
+@media (max-width:600px){#hero{padding:calc(var(--nav-h) + 36px) 16px 48px}.metaphor{flex-direction:column;gap:8px}}
+
+footer{text-align:center;padding:32px 20px 48px;color:var(--muted);font-size:.85rem;line-height:1.7}
+</style>
+</head>
+<body>
+
+<nav class="top" aria-label="Навигация по странице">
+  <a class="nav-link" href="../oglavlenie.html">← Оглавление</a>
+  <span class="nav-sep"></span>
+  <span class="nav-logo">Урок 1 · Как устроен ИИ</span>
+  <span class="nav-sep"></span>
+  <a class="nav-link" href="#s1">История ИИ</a>
+  <a class="nav-link" href="#s2">Трансформер</a>
+  <a class="nav-link" href="#s3">Генератор вероятностей</a>
+  <a class="nav-link" href="#s4">Форматы задач</a>
+  <a class="nav-link" href="#s5">Промпт и токены</a>
+  <a class="nav-link" href="#s6">Контекстное окно</a>
+  <a class="nav-link" href="#s7">Выбор нейросети</a>
+  <a class="nav-link" href="#s8">LLM Arena</a>
+  <a class="nav-link" href="#s9">Итоги и ДЗ</a>
+  <a class="nav-link" href="#checklist">Чек-лист</a>
+  <a class="nav-link" href="#quiz">Квиз</a>
+</nav>
+
+<header id="hero">
+  <div class="hero-badges">
+    <span class="hero-badge">ДПО-1 · Урок 1</span>
+    <span class="hero-badge">90 минут</span>
+    <span class="hero-badge">Начальный уровень</span>
+    <span class="hero-badge">Только синтетические примеры</span>
+  </div>
+  <h1 class="hero-title">Как устроен <em>современный ИИ</em></h1>
+  <p class="hero-sub">После урока вы сможете отличать запрос от контекста, объяснять роль токенов, замечать перегрузку диалога и выбирать нейросеть под задачу, а не по рейтингу.</p>
+  <figure class="img-card hero-img" data-lightbox>
+    <img src="../png/kak_ustroen_ii/01_hero_ot_ruchnogo_analiza_k_ii.jpg" alt="Инфографика «От ручного анализа к ИИ»: слева человек изучает документы вручную, справа нейросеть обрабатывает сигнал и ускоряет принятие решений" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">«От ручного анализа к ИИ» — обзорный слайд урока</figcaption>
+  </figure>
+  <nav class="hero-nav" aria-label="Разделы страницы">
+    <a href="#s1">От Тьюринга до ChatGPT</a>
+    <a href="#s3">Почему ИИ «фантазирует»</a>
+    <a href="#s5">Промпт как ТЗ</a>
+    <a href="#s6">Контекстное окно</a>
+    <a href="#s7">Какую нейросеть выбрать</a>
+    <a href="#s9">Домашнее задание</a>
+    <a href="#quiz">Проверить себя</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ══════════ БЛОК 1: ИСТОРИЯ ИИ ══════════ -->
+<section class="sec" id="s1">
+  <div class="sec-head fade">
+    <div class="num-badge n1">1</div>
+    <h2 class="sec-title">История ИИ: от фантастических идей до ChatGPT</h2>
+    <p class="sec-desc">Нейросети умеют работать с текстом, но могут ошибаться. Чтобы понять, почему, начнём не с кнопок, а с этапов развития технологии: каждый объясняет одну из её сегодняшних возможностей или ограничений.</p>
+  </div>
+
+  <div class="note-callout fade">
+    <p>🔒 <strong>Правило урока:</strong> все примеры вымышленные — учебные заявки, короткие отчёты и условия выбора. Реальные документы предприятия во внешние сервисы не передаём.</p>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/02_tyuring_1950.jpg" alt="Алан Тьюринг за печатной машинкой рядом с вычислительной машиной: вопрос «Может ли машина мыслить?», 1950 год" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">1950 — «Игра в имитацию» Алана Тьюринга</figcaption>
+  </figure>
+
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Лента истории ИИ: 11 вех — листайте стрелками</span>
+      <button type="button" class="viz-fs" data-fs-src="lenta_istorii.html" data-fs-title="Лента истории ИИ: 1950 → 2022">⛶ На весь экран</button>
+    </div>
+    <iframe src="lenta_istorii.html" height="700" loading="lazy" title="Лента истории ИИ: 1950 → 2022"></iframe>
+  </div>
+  <p class="viz-hint fade">Для каждой вехи — суть, объяснение простыми словами и факт, который стоит рассказать коллегам. На проекторе удобно включить «Автопоказ».</p>
+
+  <h3 class="sub-title fade">Что изменилось за 75 лет</h3>
+  <div class="img-row fade">
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/17_evolyuciya_testa_tyuringa.jpg" alt="Эволюция теста Тьюринга 1950–2025: ELIZA убеждала 22% собеседников, Eugene Goostman — 33%, GPT-4 — 50%, GPT-4.5 — 73% при среднем показателе человека 66%" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Эволюция теста Тьюринга: 1950 → 2025</figcaption>
+    </figure>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/18_tri_dvigatelya.jpg" alt="Три двигателя прогресса ИИ: новые алгоритмы, рост мощности железа (GPU) и объёмы данных" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Три двигателя прогресса ИИ</figcaption>
+    </figure>
+  </div>
+
+  <div class="warn-callout fade">
+    <p><strong>Как читать цифры теста Тьюринга</strong>Проценты на слайде получены в разных экспериментах с разной методикой и длительностью диалога. Их нельзя складывать в одну «линейку прогресса». Пройденный тест показывает умение имитировать разговор, а не наличие понимания или сознания.</p>
+  </div>
+
+  <div class="quote-box fade">
+    История ИИ показывает: каждый раз, когда учёные упирались в тупик, прорыв происходил благодаря трём факторам — новым алгоритмам, росту мощности «железа» (GPU) и объёмам данных. Сегодня технология впервые вышла за пределы лабораторий и стала частью повседневности каждого из нас.
+  </div>
+</section>
+
+<!-- ══════════ БЛОК 2: ТРАНСФОРМЕР ══════════ -->
+<section class="sec" id="s2">
+  <div class="sec-head fade">
+    <div class="num-badge n2">2</div>
+    <h2 class="sec-title">Как устроен трансформер: что прячется в буквах GPT</h2>
+    <p class="sec-desc">В 2017 году исследователи Google в статье «Attention Is All You Need» представили архитектуру Transformer. На ней построены ChatGPT, GigaChat, YandexGPT, DeepSeek и другие большие языковые модели (LLM — Large Language Model). Разберём её за три шага.</p>
+  </div>
+
+  <div class="grid-3 fade">
+    <div class="card letter-card">
+      <div class="big-letter">G</div>
+      <p class="l-word">Generative — генеративная</p>
+      <p>Не выдаёт заготовленный шаблон. На каждый вопрос заново вычисляет, какое слово логичнее поставить следующим, и «сочиняет» ответ на ваших глазах.</p>
+    </div>
+    <div class="card letter-card">
+      <div class="big-letter">P</div>
+      <p class="l-word">Pre-trained — предварительно обученная</p>
+      <p>Как человек, прочитавший огромную библиотеку. Модель не заучивает факты наизусть, а усваивает закономерности языка.</p>
+    </div>
+    <div class="card letter-card">
+      <div class="big-letter">T</div>
+      <p class="l-word">Transformer — трансформер</p>
+      <p>Архитектура с механизмом внимания: удерживает нить разговора и понимает, как слова связаны между собой во всём тексте.</p>
+    </div>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/12_gpt_transformer_2017.jpg" alt="Схема Generative Pre-trained Transformer в три шага: данные превращаются в токены, трансформер вычисляет внимание к контексту, из контекста генерируется осмысленный ответ" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">GPT: от данных к осмысленному ответу</figcaption>
+  </figure>
+
+  <div class="flow fade" aria-label="Цепочка работы трансформера">
+    <span>Разбить на токены и векторы</span><i>→</i><span>Найти связи через внимание</span><i>→</i><span>Сгенерировать ответ</span>
+  </div>
+
+  <h3 class="sub-title fade">Шаг 1. Токенизация и эмбеддинги</h3>
+  <div class="grid-2 fade">
+    <div>
+      <p class="lead-p">Компьютер не читает слова так, как мы: для него текст — набор символов. Поэтому модель сначала режет предложение на кусочки — <strong>токены</strong> (целые слова или их части). Затем каждый токен превращается в <strong>эмбеддинг</strong> — вектор, набор чисел-координат в многомерном пространстве.</p>
+      <div class="metaphor">
+        <span class="m-ico" aria-hidden="true">🗺️</span>
+        <p><b class="m-name">Метафора: карта смыслов</b>Близкие по смыслу слова — «кошка» и «собака» — лежат на карте рядом, а «экскаватор» — далеко от них. Текст превращается в набор точек, с которыми уже можно считать.</p>
+      </div>
+    </div>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/13_transformer_tokenizaciya.jpg" alt="Шаг 1 трансформера: фраза «Искусственный интеллект меняет мир» разбита на токены с числовыми ID и превращена в векторы в семантическом пространстве" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Шаг 1: токенизация и эмбеддинги</figcaption>
+    </figure>
+  </div>
+
+  <h3 class="sub-title fade">Шаг 2. Механизм внимания (Self-Attention)</h3>
+  <div class="grid-2 fade">
+    <div>
+      <p class="lead-p">Раньше нейросети читали текст по порядку и к концу длинного предложения «забывали» начало. Трансформер смотрит на <strong>всё предложение целиком и сразу</strong>: прокладывает связи между всеми словами и оценивает, насколько они важны друг для друга.</p>
+      <p class="lead-p">Во фразе «Заяц убежал от волка, потому что он был быстрым» внимание натягивает сильную «нить» между «он» и «заяц». Модель улавливает, кто был быстрым и кто от кого убегал.</p>
+    </div>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/14_transformer_attention.jpg" alt="Шаг 2 трансформера: механизм Self-Attention связывает слово «она» со словом «кошка» во фразе «Кошка сидит на ковре, потому что она устала»" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Шаг 2: механизм Self-Attention</figcaption>
+    </figure>
+  </div>
+
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Механизм внимания: нажмите на любое слово</span>
+      <button type="button" class="viz-fs" data-fs-src="vnimanie.html" data-fs-title="Механизм внимания: кто такой «он»?">⛶ На весь экран</button>
+    </div>
+    <iframe src="vnimanie.html" height="560" loading="lazy" title="Механизм внимания: кто такой «он»?"></iframe>
+  </div>
+  <p class="viz-hint fade">Сравните первые два предложения: одно слово «не» меняет смысл — и внимание переключается с зайца на волка.</p>
+
+  <h3 class="sub-title fade">Шаг 3. Генерация ответа из контекста</h3>
+  <div class="grid-2 fade">
+    <div>
+      <p class="lead-p">Пройдя через десятки слоёв внимания, отдельные слова и связи складываются в общее представление контекста. На его основе модель вычисляет вероятность следующего слова и строит связный ответ — продолжение статьи, перевод или код.</p>
+      <div class="key-callout"><p>LLM <span>не извлекает</span> готовый ответ из базы. Она пошагово генерирует его, опираясь на понимание контекста.</p></div>
+    </div>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/15_transformer_generaciya.jpg" alt="Шаг 3 трансформера: контекст из текста, кода и изображений объединяется в представление, из которого генерируется новый ответ" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Шаг 3: генерация ответа</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ══════════ БЛОК 3: LLM — ГЕНЕРАТОР ВЕРОЯТНОСТЕЙ ══════════ -->
+<section class="sec" id="s3">
+  <div class="sec-head fade">
+    <div class="num-badge n3">3</div>
+    <h2 class="sec-title">LLM — генератор вероятностей, а не поисковик</h2>
+    <p class="sec-desc">Главная ловушка: модель не ищет готовый документ. Она досочиняет ответ на лету, угадывая каждое следующее слово. Если данных не хватает, она не признаётся, а уверенно додумывает.</p>
+  </div>
+
+  <div class="metaphor fade">
+    <span class="m-ico" aria-hidden="true">📱</span>
+    <div>
+      <p><b class="m-name">Метафора: Т9 на максималках</b>Когда вы пишете в смартфоне «Я иду в…», Т9 предлагает «магазин» или «офис». LLM делает то же самое, но прочитала огромную часть интернета и строит длинные смысловые цепочки, а не одно слово.</p>
+      <p>Это ваш идеальный, но фантазирующий стажёр: пишет гладко и уверенно, даже когда не знает ответа.</p>
+    </div>
+  </div>
+
+  <div class="grid fade">
+    <div class="card"><p class="c-name">Вход 📥</p><p>Ваши инструкции и исходные факты — контекст.</p></div>
+    <div class="card"><p class="c-name">Процесс ⚙️</p><p>Токенизация (текст → числа) → расчёт вероятностей → генерация по шагам.</p></div>
+    <div class="card"><p class="c-name">Главный риск ⚠️</p><p>Галлюцинации: модель стремится заполнить пустоту любой ценой.</p></div>
+    <div class="card"><p class="c-name">Правило работы 📏</p><p>Модель не проверяет факты в реальном времени, если к ней явно не подключён поиск.</p></div>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/19_llm_veroyatnosti.jpg" alt="Как LLM выбирает ответ: на вопрос «Какой день идёт после вторника?» модель оценивает варианты — среда 85%, четверг 10%, пятница 3% — и выбирает самый вероятный" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">LLM: как модель выбирает ответ</figcaption>
+  </figure>
+
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Как LLM досочиняет ответ — две вкладки</span>
+      <button type="button" class="viz-fs" data-fs-src="sleduyushchee_slovo.html" data-fs-title="Как LLM досочиняет ответ">⛶ На весь экран</button>
+    </div>
+    <iframe src="sleduyushchee_slovo.html" height="640" loading="lazy" title="Как LLM досочиняет ответ"></iframe>
+  </div>
+
+  <details class="acc fade">
+    <summary>Разбор примера: биография несуществующего изобретателя</summary>
+    <div class="acc-body">
+      <p><strong>1. Вход.</strong> Запрос с выдуманным фактом: «Напиши биографию профессора Алексея Веселовского, который изобрёл квантовый опреснитель воды в Тюмени в 2018 году».</p>
+      <p><strong>2. Процесс.</strong> Текст превращается в токены. Модель знает, как устроены биографии: после имени идут годы жизни, вуз, награды, описание изобретения. Каждое следующее слово она выбирает по принципу «что звучит правдоподобнее всего дальше» — город, лаборатория, научные термины.</p>
+      <p><strong>3. Результат.</strong> Три гладких абзаца в научном стиле, с датами и названиями институтов. В реальности изобретателя квантового опреснителя в Тюмени не существует.</p>
+      <p><strong>4. Почему так.</strong> Модель не заглянула в энциклопедию и реестр патентов. Она увидела команду «Напиши биографию» и контекст «квантовый опреснитель» — и построила статистически идеальный текст, который выглядит как настоящий.</p>
+    </div>
+  </details>
+
+  <div class="key-callout fade"><p>⚠️ ИИ даёт не правду, а <span>наиболее вероятное продолжение вашего текста</span>. Спросите о том, чего нет, — и вместо «я не знаю» получите то, что звучит максимально правдоподобно.</p></div>
+
+  <div class="warn-callout fade">
+    <p><strong>Где граница</strong>Подключённый поиск или загруженные документы снижают риск выдумки, но не отменяют проверку: модель может неверно пересказать и настоящий источник. Факты, цифры, ссылки и нормативы в ответе проверяет человек.</p>
+  </div>
+</section>
+
+<!-- ══════════ БЛОК 4: ЭКОСИСТЕМА — ФОРМАТ ЗАДАЧИ ══════════ -->
+<section class="sec" id="s4">
+  <div class="sec-head fade">
+    <div class="num-badge n4">4</div>
+    <h2 class="sec-title">Экосистема ИИ: формат задачи определяет класс инструмента</h2>
+    <p class="sec-desc">Не пытайтесь заставить текстовый чат идеально нарисовать схему или распознать звук без нужных модулей. Сначала посмотрите на исходные данные и операцию — потом выбирайте инструмент.</p>
+  </div>
+
+  <div class="metaphor fade">
+    <span class="m-ico" aria-hidden="true">🔪</span>
+    <p><b class="m-name">Метафора: швейцарский нож и лесопильный станок</b>ChatGPT и другие универсальные чаты — швейцарский нож: и яблоко порезать, и шуруп закрутить. Удобно! Но чтобы переработать тонну древесины, нужен лесопильный станок — специализированная модель.</p>
+  </div>
+
+  <div class="img-row fade">
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/20_formaty_zadach.jpg" alt="Одна технология — много возможностей: текст, изображения, видео, поиск, аудио и мультимодальность в современных ИИ-системах" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Одна технология — много форматов</figcaption>
+    </figure>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/21_shveycarskiy_nozh.jpg" alt="ChatGPT как швейцарский нож против специализированной ИИ-модели как лесопильного станка: универсальность против экспертного качества в узкой задаче" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">ChatGPT — швейцарский нож. Удобно, но не для всего</figcaption>
+    </figure>
+  </div>
+
+  <div class="table-wrap fade">
+    <table class="t">
+      <caption>Матрица задач: от формата данных к классу инструмента</caption>
+      <thead><tr><th>Входной формат</th><th>Задача</th><th>Класс инструмента</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Текст</strong></td><td>Резюме, письмо, код</td><td>LLM — текстовые модели</td></tr>
+        <tr><td><strong>Поиск</strong></td><td>Свежие факты, ссылки</td><td>RAG / Web-Search AI — поиск по источникам; бывает встроенной функцией LLM</td></tr>
+        <tr><td><strong>Изображение</strong></td><td>Схема, дизайн, визуализация</td><td>Диффузионные модели (генерация) / Vision AI (распознавание)</td></tr>
+        <tr><td><strong>Аудио</strong></td><td>Протокол встречи, подкаст</td><td>Speech-to-Text (распознавание речи) / TTS (синтез речи)</td></tr>
+        <tr><td><strong>Мультимодальный ввод</strong></td><td>«Посмотри на график и объясни»</td><td>Мультимодальная LLM</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src-note fade">RAG (Retrieval-Augmented Generation) — «генерация с подсказкой из источников»: сначала система находит нужные документы, потом модель отвечает по ним. Как экзамен с открытой книгой.</p>
+
+  <div class="warn-callout fade">
+    <p><strong>Где граница</strong>Мультимодальная система умеет принимать и создавать разные типы данных, но это не значит, что все функции одинаково качественные. Текстовую записку можно сократить языковой моделью; для поиска первоисточника нужен доступ к источникам; аудиозапись сначала распознают. И главное: кнопка «загрузить файл» в интерфейсе не даёт разрешения загружать производственные материалы.</p>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/22_populyarnye_neyroseti.jpg" alt="Самые популярные нейросети по данным компаний: ChatGPT, Gemini, Meta AI, Claude, Perplexity, Midjourney, Runway, Suno — аудитория и поддерживаемые форматы данных" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">Самые популярные нейросети и их форматы</figcaption>
+  </figure>
+  <p class="src-note fade">Аудитория на слайде — данные самих компаний: одни раскрывают недельную аудиторию (WAU), другие месячную (MAU), поэтому сравнивать цифры напрямую нельзя. Большинство сервисов со слайда официально недоступны из РФ — актуальный статус смотрите в <a class="svc-link" href="#s7">блоке 7</a>. Компания Meta признана экстремистской организацией и запрещена в России.</p>
+</section>
+
+<!-- ══════════ БЛОК 5: ПРОМПТ И ТОКЕНЫ ══════════ -->
+<section class="sec" id="s5">
+  <div class="sec-head fade">
+    <div class="num-badge n5">5</div>
+    <h2 class="sec-title">Промпт и токены: как управлять результатом</h2>
+    <p class="sec-desc"><strong>Промпт</strong> (prompt — «подсказка, инструкция») — запрос, который вы отправляете нейросети. Он задаёт роль ИИ, стиль, формат и точность ответа. <strong>Токен</strong> — единица текста, которой модель «читает» и «пишет».</p>
+  </div>
+
+  <div class="metaphor fade">
+    <span class="m-ico" aria-hidden="true">✉️</span>
+    <div>
+      <p><b class="m-name">Метафора: телеграмма с оплатой за знаки</b>В XIX веке за телеграмму платили за каждый знак. ИИ тоже «читает» не страницами Word, а токенами — фрагментами слов, — и у каждого диалога есть бюджет.</p>
+      <p>Увеличить шрифт в документе — не значит потратить больше токенов. А вот лишнее вежливое вступление отнимает полезное место.</p>
+    </div>
+  </div>
+
+  <h3 class="sub-title fade">Что такое токен</h3>
+  <div class="grid-2 fade">
+    <div>
+      <p class="lead-p">Токеном бывает целое слово, его часть, отдельный символ или знак препинания. Модель переводит каждый токен в числовой код.</p>
+      <ul class="dash-list mb">
+        <li><strong>Простые частые слова</strong> («дом», «apple», «ок») — обычно 1 токен.</li>
+        <li><strong>Редкие и длинные слова</strong> дробятся: «непредусмотрительность» — 3–6 токенов.</li>
+        <li><strong>Пробелы, знаки, цифры и эмодзи</strong> — отдельные токены или их части.</li>
+        <li><strong>English:</strong> 1 токен ≈ 4 символа (≈ 0,75 слова), 100 токенов ≈ 75 слов.</li>
+        <li><strong>Русский:</strong> обычное слово чаще всего 2–4 токена — лимиты расходуются быстрее.</li>
+      </ul>
+      <div class="warn-callout">
+        <p><strong>Почему кириллица «дороже»</strong>Большинство моделей обучали в основном на английских текстах, и их словари токенов лучше приспособлены к английскому. Насколько дороже русский, зависит от токенизатора: у новых моделей разрыв заметно меньше.</p>
+      </div>
+    </div>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/24_tokenizaciya.jpg" alt="Токенизация: строка «Встреча в 14:00» разбита токенизатором на токены «Встреча», «в», «14», «:», «00», каждому присвоен числовой ID" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Токенизация: как текст превращается в токены</figcaption>
+    </figure>
+  </div>
+
+  <div class="grid fade mt">
+    <div class="card"><p class="c-name">Память модели 🧠</p><p>У каждой модели есть предел токенов в одной сессии — контекстное окно. Если его превысить, модель «забывает» начало диалога.</p></div>
+    <div class="card"><p class="c-name">Стоимость 💳</p><p>В платных API оплачиваются и входящие токены (ваш запрос), и исходящие (ответ модели).</p></div>
+  </div>
+
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Учебный токенизатор: сколько «стоит» текст</span>
+      <button type="button" class="viz-fs" data-fs-src="tokenizator.html" data-fs-title="Учебный токенизатор">⛶ На весь экран</button>
+    </div>
+    <iframe src="tokenizator.html" height="620" loading="lazy" title="Учебный токенизатор"></iframe>
+  </div>
+  <p class="viz-hint fade">Порядок как на занятии: выберите «Встреча», нажмите «Запомнить как A», затем добавьте поручение и сравните счёт. Считать слова вручную не нужно — важно увидеть, что исходник, поручение и история занимают место.</p>
+
+  <details class="acc fade">
+    <summary>Настоящие токенизаторы: онлайн-сервисы и библиотеки</summary>
+    <div class="acc-body">
+      <p>Сторонний инструмент показывает разбиение выбранного токенизатора. Он не гарантирует совпадения с любой моделью и не учитывает служебный объём конкретного чата.</p>
+      <ul class="links-list mt">
+        <li><a class="svc-link" href="https://tiktoken.vercel.app/" target="_blank" rel="noopener">Tiktoken Web</a> — лёгкий токенизатор для моделей OpenAI, считает прямо в браузере. VPN не нужен.</li>
+        <li><a class="svc-link" href="https://gptforwork.com/tools/tokenizer" target="_blank" rel="noopener">GPT for Work Tokenizer</a> — счётчик для нескольких семейств моделей. VPN не нужен.</li>
+        <li><a class="svc-link" href="https://tokenizer.model.box/" target="_blank" rel="noopener">ModelBox Online Tokenizer</a> — разбиение текста для популярных моделей. VPN не нужен.</li>
+        <li><a class="svc-link" href="https://aistudio.yandex.ru/" target="_blank" rel="noopener">Yandex AI Studio</a> — консоль Yandex Cloud с токенизацией для моделей YandexGPT, хорошо работающих с русским языком. VPN не нужен.</li>
+        <li><a class="svc-link" href="https://huggingface.co/spaces" target="_blank" rel="noopener">Hugging Face Spaces</a> — сотни приложений-визуализаторов токенизаторов открытых моделей (Qwen, DeepSeek, Mistral и др.). Основной домен открывается из РФ.</li>
+        <li><a class="svc-link" href="https://pypi.org/project/tiktoken/" target="_blank" rel="noopener">tiktoken</a> и <a class="svc-link" href="https://pypi.org/project/transformers/" target="_blank" rel="noopener">transformers</a> — Python-библиотеки для локального подсчёта токенов: текст не уходит во внешний сервис.</li>
+      </ul>
+      <p class="src-note">Доступность сервисов — по данным урока; из сети вашей организации она может отличаться.</p>
+    </div>
+  </details>
+
+  <h3 class="sub-title fade">Промпт — это ТЗ, а не вопрос</h3>
+  <div class="metaphor fade">
+    <span class="m-ico" aria-hidden="true">👨‍🍳</span>
+    <div>
+      <p><b class="m-name">Метафора: шеф-повар на аутсорсе</b>Скажете повару «Сделай что-нибудь вкусное на обед» — он приготовит то, что считает вкусным сам. Например, устрицы, а у вас на них аллергия.</p>
+      <p>Дадите ТЗ — «Ты шеф-повар здорового питания. Приготовь сытный обед до 600 ккал без морепродуктов и сахара, подай в виде боула» — и результат совпадёт с ожиданиями с первого раза. Garbage In — Garbage Out: какой запрос, такой и ответ.</p>
+    </div>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/23_prompt_inzhiniring.jpg" alt="Промпт-инжиниринг: размытый запрос без роли, контекста, ограничений и формата даёт слабый результат, а структурный промпт — точный и полезный" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">Промпт-инжиниринг: как направлять результат ИИ</figcaption>
+  </figure>
+
+  <div class="grid fade">
+    <div class="card"><p class="c-name">1. Роль 🎭</p><p>Кем ИИ должен себя вообразить: «Ты — главный технолог производственного предприятия».</p></div>
+    <div class="card"><p class="c-name">2. Контекст 📂</p><p>Входные данные и ситуация: «Запускаем новую линию упаковки, бюджет ограничен».</p></div>
+    <div class="card"><p class="c-name">3. Задача 🎯</p><p>Что конкретно сделать: «Составь перечень потенциальных рисков при запуске».</p></div>
+    <div class="card"><p class="c-name">4. Ограничения 🚧</p><p>Чего делать нельзя: «Без вводных слов и абстракций, опирайся только на производственные факты».</p></div>
+    <div class="card"><p class="c-name">5. Формат 📋</p><p>Как оформить: «Таблица из 3 колонок: Риск | Вероятность | Мера защиты».</p></div>
+  </div>
+  <p class="src-note fade">Роль · Контекст · Задача · Ограничения · Формат — формула корпоративного MEGA-промпта из урока. Её же вы используете в домашнем задании.</p>
+
+  <div class="duo fade">
+    <div class="duo-box bad">
+      <p class="d-label">❌ Размытый запрос (без контекста)</p>
+      <p>«Напиши письмо клиенту о задержке поставки оборудования».</p>
+      <p class="d-res">Результат: сухой шаблонный текст, который звучит отстранённо и может разозлить клиента.</p>
+    </div>
+    <div class="duo-box good">
+      <p class="d-label">✅ Промпт-ТЗ</p>
+      <p>Роль, причина и срок задержки, получатель, компенсация и формат — всё в запросе (полный текст ниже).</p>
+      <p class="d-res">Результат: готовое к отправке письмо, которое сохраняет лояльность клиента.</p>
+    </div>
+  </div>
+
+  <div class="prompt-box fade">
+    <div class="prompt-head">
+      <span>Промпт: письмо о задержке поставки (учебный пример)</span>
+      <button type="button" class="copy-btn" data-copy="prompt-letter">Копировать</button>
+    </div>
+    <pre id="prompt-letter">Ты — опытный клиентский менеджер в B2G-сегменте.
+Наша компания задерживает поставку станка на 3 дня из-за логистики.
+Напиши вежливое, эмпатичное служебное письмо директору завода.
+Объясни причину и предложи компенсацию — бесплатное сервисное обслуживание на месяц.
+Формат: готовый черновик письма с темой.</pre>
+  </div>
+
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Конструктор MEGA-промпта: соберите свой запрос</span>
+      <button type="button" class="viz-fs" data-fs-src="konstruktor_prompta.html" data-fs-title="Конструктор MEGA-промпта">⛶ На весь экран</button>
+    </div>
+    <iframe src="konstruktor_prompta.html" height="720" loading="lazy" title="Конструктор MEGA-промпта"></iframe>
+  </div>
+
+  <h3 class="sub-title fade">Виды промптов</h3>
+  <div class="grid-3 fade">
+    <div class="card"><p class="card-title">Zero-shot — прямой</p><p class="muted">Запрос без примеров: «Объясни, что такое фотосинтез».</p></div>
+    <div class="card"><p class="card-title">Few-shot — с примерами</p><p class="muted">Запрос с образцами нужного результата: «Вот пример тональности: […]. Напиши так же».</p></div>
+    <div class="card"><p class="card-title">Chain-of-Thought — цепочка рассуждений</p><p class="muted">Просим рассуждать по шагам: «Рассуждай шаг за шагом, потом дай финальный ответ».</p></div>
+  </div>
+
+  <div class="grid-2 fade mt">
+    <div class="ok-callout"><p><strong>Что даёт хороший промпт.</strong> Сотрудник получает рабочий документ с первой попытки, а не тратит время на переделку и исправление выдумок. Команда пишет отчёты и служебные записки в едином стандарте. Меньше «воды» — меньше токенов и затрат в API.</p></div>
+    <div class="warn-callout"><p><strong>Где граница.</strong> Даже идеальный промпт не гарантирует правильных фактов: он снижает риск ошибок, но не отменяет проверку. И никакой промпт не делает допустимой загрузку служебных данных во внешний сервис.</p></div>
+  </div>
+</section>
+
+<!-- ══════════ БЛОК 6: КОНТЕКСТНОЕ ОКНО ══════════ -->
+<section class="sec" id="s6">
+  <div class="sec-head fade">
+    <div class="num-badge n6">6</div>
+    <h2 class="sec-title">Контекстное окно: рабочий стол модели</h2>
+    <p class="sec-desc"><strong>Контекстное окно</strong> — максимальный объём информации в токенах, который модель может учитывать при ответе в рамках одного диалога. Всё, что за его пределами, для модели как будто не существует.</p>
+  </div>
+
+  <div class="grid-3 fade">
+    <div class="card"><p class="card-title">ПРОМПТ</p><p class="muted">Поручение и данные для задачи.</p></div>
+    <div class="card"><p class="card-title">ТОКЕН</p><p class="muted">Единица обработки текста — не обязательно слово.</p></div>
+    <div class="card"><p class="card-title">КОНТЕКСТ</p><p class="muted">Сведения, доступные модели при ответе.</p></div>
+  </div>
+
+  <div class="metaphor fade">
+    <span class="m-ico" aria-hidden="true">🛠️</span>
+    <div>
+      <p><b class="m-name">Метафора: рабочий стол мастера</b>На маленьком столе помещается один чертёж — чтобы взять второй, первый приходится убрать в шкаф. Большой стол (большое контекстное окно) позволяет разложить сотни страниц сразу.</p>
+      <p>Но если завалить стол горой документов, мастер начнёт путаться и терять листы в середине стопки. Это учебная аналогия, а не описание физической памяти.</p>
+    </div>
+  </div>
+
+  <div class="img-row fade">
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/25_kontekstnoe_okno.jpg" alt="Контекстное окно — рабочая память ИИ: в активный контекст попадают промпт, история чата, документы, код и веб-данные, а старые данные за пределами окна не учитываются" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Контекстное окно: рабочая память ИИ</figcaption>
+    </figure>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/26_kontekst_perepolnen.jpg" alt="Переполненное контекстное окно: 819 200 из 1 000 000 токенов использовано, при превышении лимита старая информация вытесняется и выходит из контекста" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Когда окно переполнено</figcaption>
+    </figure>
+  </div>
+
+  <h3 class="sub-title fade">Из чего складывается объём контекста</h3>
+  <p class="lead-p fade">Окно заполняет не только последнее сообщение. Точный состав определяет сервис, но обычно это сумма четырёх частей:</p>
+  <div class="grid fade">
+    <div class="card"><p class="c-name">1. Системный промпт ⚙️</p><p>Скрытые базовые инструкции и правила поведения от разработчиков или компании.</p></div>
+    <div class="card"><p class="c-name">2. История диалога 💬</p><p>Все предыдущие вопросы и ответы в этой ветке — или та их часть, которую передаёт сервис.</p></div>
+    <div class="card"><p class="c-name">3. Загруженные файлы 📎</p><p>Тексты, таблицы и документы, прикреплённые к чату (часто в обработанном виде).</p></div>
+    <div class="card"><p class="c-name">4. Текущий запрос ✍️</p><p>Ваше новое сообщение.</p></div>
+  </div>
+  <div class="warn-callout fade">
+    <p><strong>Критический нюанс</strong>При каждом новом ответе модель заново обрабатывает весь переданный контекст. Чем длиннее чат, тем больше ресурсов уходит на каждый ответ и тем ближе модель к пределу своего «стола».</p>
+  </div>
+
+  <h3 class="sub-title fade">Три состояния окна: демонстрация</h3>
+  <p class="lead-p fade">Схема 100 → 130 → 100 показывает условный бюджет, включая резерв на ответ. Нажмите «Следующее состояние»: A → B → C, затем «Сброс». «Старт» включает автоматическое переключение, «Пауза» его останавливает.</p>
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Три состояния контекстного окна</span>
+      <button type="button" class="viz-fs" data-fs-src="kontekstnoe_okno.html" data-fs-title="Три состояния контекстного окна">⛶ На весь экран</button>
+    </div>
+    <iframe src="kontekstnoe_okno.html" height="660" loading="lazy" title="Три состояния контекстного окна"></iframe>
+  </div>
+  <div class="note-callout fade">
+    <p><strong>Наблюдение:</strong> A — бюджет 100; B — добавили материал, получилось 130; C — проверенное резюме истории возвращает сумму к 100.</p>
+    <p><strong>Вывод:</strong> сокращение истории помогает вместить данные, но не гарантирует качество резюме. Проверяйте одновременно размер и смысл: старые и новые указания могут противоречить друг другу, а важное условие может потеряться при сокращении.</p>
+  </div>
+  <p class="src-note fade">Условная схема автора урока, а не лимит конкретного сервиса. В реальности превышение может приводить к отказу, сокращению или обрезке истории — одинакового поведения у всех сервисов нет.</p>
+
+  <h3 class="sub-title fade">Эффект «Lost in the Middle» — потеря в середине</h3>
+  <div class="grid-2 fade">
+    <div>
+      <p class="lead-p">Внимание модели распределено неравномерно. Лучше всего она учитывает <strong>начало контекста</strong> (системные правила и роль) и <strong>конец</strong> (последний запрос). Факты, спрятанные в середине длинного документа или чата на 50–100 страниц, склонны «растворяться».</p>
+      <div class="quote-box">Представьте, что контекстное окно — рабочий чердак. Принесли 2–3 актуальные папки — мастер работает быстро и чётко. Свалили архив за 5 лет, инструкции к бытовой технике и всю переписку из мессенджеров — мастер путается, перечитывает ворох при каждом вопросе и теряет нужные документы посередине стопки.</div>
+      <p class="src-note">Основание: <a class="svc-link" href="https://arxiv.org/abs/2307.03172" target="_blank" rel="noopener">исследование «Lost in the Middle» (Liu и соавторы, 2023)</a> — о том, как модели используют длинный контекст. Это не универсальная гарантия поведения современных моделей: у новых версий эффект бывает слабее.</p>
+    </div>
+    <figure class="img-card" data-lightbox>
+      <img src="../png/kak_ustroen_ii/27_norma_i_peregruzka.jpg" alt="Контекстное окно: норма и перегрузка. При загрузке 30% модель работает быстро и точно, при 100% старые сообщения теряются, а ответ медленнее" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+      <figcaption class="img-missing-caption">Норма и перегрузка контекста</figcaption>
+    </figure>
+  </div>
+
+  <h3 class="sub-title fade">Три симптома перегруза контекста</h3>
+  <div class="grid-3 fade">
+    <div class="card"><p class="card-title">🕳️ Потеря в середине</p><p class="muted">Модель видит начало и конец, а цифры и условия из середины огромного текста пропускает — и начинает додумывать.</p></div>
+    <div class="card"><p class="card-title">⏳ Долгое ожидание ответа</p><p class="muted">Перед первым словом модель обрабатывает весь контекст. Чем он больше, тем дольше ждать начала ответа (TTFT — Time to First Token): вместо долей секунды — десятки секунд.</p></div>
+    <div class="card"><p class="card-title">💸 Перерасход бюджета</p><p class="muted">В API платят за каждый входящий токен. Если снова и снова отправлять длинный чат, каждый новый короткий вопрос стоит в разы дороже.</p></div>
+  </div>
+
+  <h3 class="sub-title fade">Правила работы с контекстом</h3>
+  <div class="grid-3 fade">
+    <div class="card"><p class="card-title">✂️ Один чат — одна задача</p><p class="muted">Не ведите все проекты года в одной ветке. Закончили отчёт — закройте диалог и начните новый: это очистит «рабочий стол».</p></div>
+    <div class="card"><p class="card-title">📌 Главное — в конец</p><p class="muted">Загружаете большой документ или переписку — ставьте ключевую задачу и ограничения в самом конце промпта.</p></div>
+    <div class="card"><p class="card-title">🧹 Промежуточная выжимка</p><p class="muted">В длинном проекте попросите: «Сделай краткую выжимку наших главных решений и условий». Проверьте её по смыслу и перенесите в новый чат как стартовый контекст.</p></div>
+  </div>
+  <div class="ok-callout fade"><p><strong>Выгода для компании.</strong> Меньше «мусора» в контексте — меньше риска потерять исходное ТЗ и получить выдумку. В API очистка контекста заметно снижает расходы: вы не платите повторно за длинную историю в каждом запросе.</p></div>
+
+  <h3 class="sub-title fade">Сколько помещается в окно у разных моделей</h3>
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/28_top_kontekstnyh_okon.jpg" alt="Топ контекстных окон LLM: лидер Llama 4 Scout — 10 миллионов токенов (около 20 000 страниц А4), у ряда моделей 1–2 миллиона токенов; наглядные аналогии от одной книги до полки энциклопедий" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">Эволюция памяти LLM: топ контекстных окон</figcaption>
+  </figure>
+  <details class="acc fade">
+    <summary>🌟 Рекордсмен: Llama 4 Scout и 10 миллионов токенов</summary>
+    <div class="acc-body">
+      <p>Открытую модель Llama 4 Scout компания Meta представила 5 апреля 2025 года. Заявленный объём контекста — 10 млн токенов: по грубой оценке, до 20 000 страниц текста за один запрос, как полка из 40 томов энциклопедии. Стандартом индустрии стали окна около 1 млн токенов.</p>
+      <p><strong>Где применяют:</strong> анализ больших архивов документов без предварительной нарезки на фрагменты; работа с крупными репозиториями кода; размещение на собственных серверах компании (open-weights, архитектура Mixture-of-Experts: 109 млрд параметров, из них 17 млрд активных), чтобы данные не покидали периметр; мультимодальные задачи.</p>
+      <p><strong>Оговорка:</strong> 10 млн — цифра разработчика. Уместиться в окно не значит одинаково хорошо учесть каждую страницу: эффект потери в середине и требования к серверам никуда не деваются.</p>
+      <p class="src-note">Компания Meta признана экстремистской организацией и запрещена в России.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ══════════ БЛОК 7: ВЫБОР НЕЙРОСЕТИ ══════════ -->
+<section class="sec" id="s7">
+  <div class="sec-head fade">
+    <div class="num-badge n7">7</div>
+    <h2 class="sec-title">Выбираем инструмент по задаче, а не по рейтингу</h2>
+    <p class="sec-desc">ChatGPT · DeepSeek · GigaChat · Qwen · Gemini · YandexGPT. Идеальной нейросети «для всего» нет: лидерство в мировых рейтингах не гарантирует, что модель подходит под ваши задачи, юрисдикцию и требования к безопасности данных.</p>
+  </div>
+
+  <div class="metaphor fade">
+    <span class="m-ico" aria-hidden="true">🚚</span>
+    <p><b class="m-name">Метафора: автопарк компании</b>Если решать все задачи одной нейросетью — это всё равно что возить кирпичи на кабриолете. Представьте, что вы руководите логистикой и выбираете транспорт под груз.</p>
+  </div>
+  <div class="grid fade">
+    <div class="card"><p class="c-name">🏎️ Спорткар</p><p>ChatGPT, Claude: быстрый и умный, но дорогой и не проедет по «бездорожью» закрытого корпоративного контура.</p></div>
+    <div class="card"><p class="c-name">🚛 Карьерный самосвал</p><p>Gemini: за раз вывозит гору груза — книгу на 500 страниц или часовое видео, — где спорткар застрянет.</p></div>
+    <div class="card"><p class="c-name">🚐 Бронированный инкассатор</p><p>GigaChat, YandexGPT: может проиграть заезд на международном треке, но именно ему проще доверить данные, которые по закону должны оставаться в России.</p></div>
+    <div class="card"><p class="c-name">🚜 Тягач с открытым кодом</p><p>Qwen, DeepSeek: можно поставить в свой гараж — на сервер компании, — настроить под себя и не платить внешнему сервису за каждый километр.</p></div>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/29_matrica_vybora.jpg" alt="Матрица выбора ИИ: для кода, больших документов, приватности и быстрой категоризации подходят разные модели — выбор по задаче, данным и ограничениям, а не по хайпу" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">Матрица выбора ИИ: нужный инструмент под нужную задачу</figcaption>
+  </figure>
+
+  <h3 class="sub-title fade">🚦 Три вопроса перед тем, как открыть чат с ИИ</h3>
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Алгоритм выбора нейросети: ответьте на 3 вопроса</span>
+      <button type="button" class="viz-fs" data-fs-src="vybor_instrumenta.html" data-fs-title="Алгоритм выбора нейросети">⛶ На весь экран</button>
+    </div>
+    <iframe src="vybor_instrumenta.html" height="680" loading="lazy" title="Алгоритм выбора нейросети"></iframe>
+  </div>
+
+  <div class="duo fade">
+    <div class="duo-box bad">
+      <p class="d-label">❌ Ошибочный подход</p>
+      <p>Сотрудник загружает PDF-отчёт на 400 страниц в чат с небольшим окном. Сервис выдаёт ошибку лимита или учитывает лишь часть файла — анализ получается поверхностным.</p>
+    </div>
+    <div class="duo-box good">
+      <p class="d-label">✅ Грамотный подход</p>
+      <p>Открытый отчёт анализируют в модели, чьё окно вмещает документ целиком (в уроке — Gemini), и модель видит связи между 1-й и 390-й страницей. Если такой модели нет — документ делят на части с проверенными выжимками.</p>
+    </div>
+    <div class="duo-box bad">
+      <p class="d-label">❌ Ошибочный подход</p>
+      <p>Юрист отправляет черновик реального договора с персональными данными клиентов и реквизитами в зарубежный публичный чат-бот — «просто проверить орфографию».</p>
+    </div>
+    <div class="duo-box good">
+      <p class="d-label">✅ Грамотный подход</p>
+      <p>Юрист использует разрешённый в организации российский сервис или локальную нейросеть внутри контура компании. Данные не покидают правовое поле РФ, риск утечки заметно ниже.</p>
+    </div>
+  </div>
+  <div class="warn-callout fade">
+    <p><strong>Где граница</strong>Возможности сервисов, тарифы и доступ из РФ меняются. Как обработка большого файла зависит от тарифа и способа загрузки. Российский сервис — не автоматическое разрешение: для персональных данных и служебных материалов нужны согласие организации и подходящие условия обработки. Риск утечки снижается, но не становится нулевым.</p>
+  </div>
+
+  <h3 class="sub-title fade">🗺️ Справочник: шесть нейросетей — доступ из РФ и возможности</h3>
+  <p class="lead-p fade">Дата проверки открытых официальных источников — 13 сентября 2026 года. Сравниваются в первую очередь пользовательские сервисы; функции API и бизнес-версий помечены отдельно. Наличие функции в семействе моделей не значит, что она включена в вашем чате.</p>
+  <div class="table-wrap fade" role="region" aria-label="Таблица сравнения нейросетей, прокручивается по горизонтали" tabindex="0">
+    <table class="t wide">
+      <thead><tr><th>Сервис</th><th>Доступ из РФ / VPN</th><th>Текст, код, документы</th><th>Фото и изображения</th><th>Аудио и видео</th><th>Агенты и автоматизация</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><a class="svc-link" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT</a><br><span class="muted">OpenAI</span></td>
+          <td><span class="status no">Не поддерживается</span> РФ официально не поддерживается. VPN не гарантирует доступ и не отменяет ограничений. <a class="svc-link" href="https://help.openai.com/en/articles/7947663" target="_blank" rel="noopener">Список стран</a></td>
+          <td>Тексты, переводы, код; анализ файлов и таблиц, выполнение кода для анализа данных; Canvas.</td>
+          <td>Анализ фото и скриншотов; генерация и редактирование изображений.</td>
+          <td>Голосовой диалог. Генерация видео — отдельный продукт, не стандартная функция любого чата.</td>
+          <td>Deep research, специализированные GPT, подключённые приложения; действия зависят от режима и тарифа. <a class="svc-link" href="https://help.openai.com/en/articles/9260256" target="_blank" rel="noopener">Возможности</a></td>
+        </tr>
+        <tr>
+          <td><a class="svc-link" href="https://chat.deepseek.com/" target="_blank" rel="noopener">DeepSeek</a><br><span class="muted"><a class="svc-link" href="https://www.deepseek.com/" target="_blank" rel="noopener">сайт</a></span></td>
+          <td><span class="status warn">Обычно без VPN</span> Официальной гарантии доступа из любой сети РФ нет; доступ из вашей сети не проверен.</td>
+          <td>Текст, код, рассуждения; поиск в интернете; загрузка файлов и извлечение текста.</td>
+          <td>В API есть экспериментальная vision-модель; не приравнивать к обычному чату. Генерация картинок не подтверждена.</td>
+          <td>Генерация аудио и видео, голосовой диалог в обычном чате не подтверждены.</td>
+          <td>API и вызов инструментов для агентных интеграций — отдельная настройка. <a class="svc-link" href="https://api-docs.deepseek.com/news/news250115/" target="_blank" rel="noopener">Чат</a> · <a class="svc-link" href="https://api-docs.deepseek.com/" target="_blank" rel="noopener">API</a></td>
+        </tr>
+        <tr>
+          <td><a class="svc-link" href="https://giga.chat/" target="_blank" rel="noopener">GigaChat</a><br><span class="muted">Сбер</span></td>
+          <td><span class="status ok">VPN не нужен</span> База знаний рекомендует выключить VPN перед входом. Вход по телефону или Сбер ID. <a class="svc-link" href="https://giga.chat/help" target="_blank" rel="noopener">Начало работы</a></td>
+          <td>Создание и редактирование текстов, помощь с кодом, обработка документов.</td>
+          <td>Генерация изображений в чате; анализ изображений — в документации моделей и API.</td>
+          <td>Распознавание аудио — через API; озвучка — отдельный сервис SaluteSpeech. Видео в обычном чате не гарантировано.</td>
+          <td>Вызов функций и интеграции через API. <a class="svc-link" href="https://developers.sber.ru/docs/ru/gigachat/models/gigachat-2-max" target="_blank" rel="noopener">Модель</a> · <a class="svc-link" href="https://developers.sber.ru/docs/ru/gigachat/guides/working-with-files" target="_blank" rel="noopener">Файлы</a></td>
+        </tr>
+        <tr>
+          <td><a class="svc-link" href="https://chat.qwen.ai/" target="_blank" rel="noopener">Qwen</a><br><span class="muted"><a class="svc-link" href="https://qwen.ai/" target="_blank" rel="noopener">Alibaba</a></span></td>
+          <td><span class="status warn">Обычно без VPN</span> Официальной гарантии работы из любой сети РФ нет; вход и функции проверьте в своём аккаунте.</td>
+          <td>Текст, программирование, документы, анализ данных и визуализации в Qwen Studio.</td>
+          <td>Мультимодальный анализ; генерация и редактирование изображений в своём режиме.</td>
+          <td>Понимание аудио и видео; голосовое общение в поддерживаемом интерфейсе. Генерация видео не во всех режимах.</td>
+          <td>DeepResearch; Qwen Code — отдельный инструмент для программистов. <a class="svc-link" href="https://qwen.ai/qwenchat" target="_blank" rel="noopener">Обзор</a></td>
+        </tr>
+        <tr>
+          <td><a class="svc-link" href="https://gemini.google.com/" target="_blank" rel="noopener">Gemini</a><br><span class="muted">Google</span></td>
+          <td><span class="status no">Региональное ограничение</span> РФ нет в официальном списке регионов; VPN не гарантирует доступ. <a class="svc-link" href="https://support.google.com/gemini/answer/13575153?hl=ru" target="_blank" rel="noopener">Регионы</a></td>
+          <td>Тексты, код, анализ документов, таблиц и репозиториев; зависит от аккаунта.</td>
+          <td>Анализ изображений; создание и редактирование в доступных режимах.</td>
+          <td>Анализ загруженных аудио и видео; создание видео — с подпиской и региональным доступом.</td>
+          <td>Gems — помощники с сохранёнными инструкциями, не обязательно автономные агенты. <a class="svc-link" href="https://support.google.com/gemini/answer/15236321?hl=en" target="_blank" rel="noopener">Gems</a></td>
+        </tr>
+        <tr>
+          <td><a class="svc-link" href="https://alice.yandex.ru/" target="_blank" rel="noopener">YandexGPT / Алиса AI</a><br><span class="muted">Яндекс</span></td>
+          <td><span class="status ok">VPN не нужен</span> Российский сервис. Полный доступ — через Яндекс ID; часть функций зависит от подписки.</td>
+          <td>Тексты, пересказ, поиск, рассуждения, код, анализ документов. Алиса AI — сервис, YandexGPT — семейство моделей.</td>
+          <td>Анализ, генерация и редактирование изображений.</td>
+          <td>Голосовые сценарии; «Оживить» превращает фото в короткое видео в «Студии».</td>
+          <td>Агент «Исследовать»; у бизнес-версии свои интеграции. <a class="svc-link" href="https://alice.yandex.ru/support/ru/assistant/chat/files" target="_blank" rel="noopener">Файлы</a> · <a class="svc-link" href="https://alice.yandex.ru/support/ru/assistant/chat/agent-deep-research" target="_blank" rel="noopener">Исследовать</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src-note fade">Отметки о VPN — справочная оценка по официальным источникам, а не тест подключения из РФ. Регион аккаунта, сеть, подписка и настройки организации могут ограничивать доступ. Таблица прокручивается по горизонтали.</p>
+
+  <h3 class="sub-title fade">Интерфейс и первые настройки</h3>
+  <p class="lead-p fade">Краткие ориентиры по официальной справке. Расположение кнопок может меняться; авторизованный интерфейс каждого аккаунта не проверялся.</p>
+  <details class="acc fade">
+    <summary>ChatGPT — интерфейс и настройки</summary>
+    <div class="acc-body">
+      <p><strong>Интерфейс:</strong> новый чат и история; поле сообщения, добавление файлов и выбор инструментов; голосовой режим. Projects объединяют чаты и файлы по задаче.</p>
+      <p><strong>Настроить:</strong> язык и стиль ответа — в персонализации; проверить память; в Settings → Data Controls — использование данных и экспорт. Для разового разговора — Temporary Chat. Он не делает облачный сервис локальным или пригодным для секретных данных.</p>
+      <p><strong>Интеграции:</strong> подключайте только нужные приложения и проверяйте их права. GPT с инструкциями и агент, который действует во внешних системах, — не одно и то же.</p>
+      <p><a class="svc-link" href="https://help.openai.com/en/articles/12677804-what-is-chatgpt-faq" target="_blank" rel="noopener">Начало работы и настройки данных</a></p>
+    </div>
+  </details>
+  <details class="acc fade">
+    <summary>DeepSeek — интерфейс и настройки</summary>
+    <div class="acc-body">
+      <p><strong>Интерфейс:</strong> диалог, история, загрузка файлов; Search — поиск в интернете, DeepThink — режим подробного рассуждения.</p>
+      <p><strong>Настроить:</strong> для актуальных сведений включайте поиск и проверяйте ссылки; для сложной задачи — режим рассуждения. Новая несвязанная задача — новый чат. Язык и формат ответа задавайте в запросе.</p>
+      <p><strong>Важно:</strong> чат и API — разные способы доступа. API требует отдельного ключа; ключ нельзя вставлять в сообщения или общие документы.</p>
+      <p><a class="svc-link" href="https://api-docs.deepseek.com/news/news250115/" target="_blank" rel="noopener">Описание приложения</a> · <a class="svc-link" href="https://api-docs.deepseek.com/" target="_blank" rel="noopener">API</a></p>
+    </div>
+  </details>
+  <details class="acc fade">
+    <summary>GigaChat — интерфейс и настройки</summary>
+    <div class="acc-body">
+      <p><strong>Интерфейс:</strong> «Новый чат», «Все чаты», «Избранное», профиль; поле ввода внизу. Меню «три точки» управляет отдельным диалогом.</p>
+      <p><strong>Настроить:</strong> войдите по телефону или Сбер ID; при проблемах проверьте, что VPN выключен. Полезные диалоги добавьте в «Избранное». В запросе укажите объём, тон и формат; для картинки явно попросите «Нарисуй…».</p>
+      <p><strong>Аудио и автоматизация:</strong> параметры API не ищите в настройках чата. Распознавание аудио — через поддерживаемую модель или API, синтез речи — SaluteSpeech.</p>
+      <p><a class="svc-link" href="https://giga.chat/help/articles/how-to-start-work-with-gigachat" target="_blank" rel="noopener">Инструкция по интерфейсу</a> · <a class="svc-link" href="https://giga.chat/help/articles/how-to-generate-images" target="_blank" rel="noopener">Генерация изображений</a> · <a class="svc-link" href="https://developers.sber.ru/docs/ru/salutespeech/overview" target="_blank" rel="noopener">SaluteSpeech</a></p>
+    </div>
+  </details>
+  <details class="acc fade">
+    <summary>Qwen — интерфейс и настройки</summary>
+    <div class="acc-body">
+      <p><strong>Интерфейс:</strong> Qwen Chat / Studio — чат с выбором режимов и загрузкой материалов; DeepResearch — для исследования вопроса. Веб- и мобильная версии могут различаться.</p>
+      <p><strong>Настроить:</strong> сначала выберите режим под задачу: текст и код, исследование, изображение или мультимодальный ввод. Язык ответа укажите в запросе, перед загрузкой проверьте тип файла.</p>
+      <p><strong>Программирование:</strong> Qwen Code устанавливается отдельно. Это агентный инструмент — не давайте ему неограниченных прав к файлам и внешним сервисам.</p>
+      <p><a class="svc-link" href="https://qwen.ai/qwenchat" target="_blank" rel="noopener">Обзор Qwen Studio</a> · <a class="svc-link" href="https://qwenlm.github.io/qwen-code-docs/en/blog/quickstart/getting-started/" target="_blank" rel="noopener">Qwen Code</a></p>
+    </div>
+  </details>
+  <details class="acc fade">
+    <summary>Gemini — интерфейс и настройки</summary>
+    <div class="acc-body">
+      <p><strong>Интерфейс:</strong> новый диалог, история, поле запроса и добавление файлов; Gems — собственные инструкции; генерация видео — в боковой панели при наличии доступа.</p>
+      <p><strong>Настроить:</strong> проверьте аккаунт и доступные режимы; в Settings / Activity — сохранение активности. Google Workspace подключайте только при необходимости. Для повторяющейся задачи создайте Gem с ролью, форматом и ограничениями.</p>
+      <p><strong>Важно:</strong> Google-аккаунт и оплаченный тариф не снимают региональных ограничений.</p>
+      <p><a class="svc-link" href="https://support.google.com/gemini/answer/14903178?hl=en" target="_blank" rel="noopener">Файлы и активность</a> · <a class="svc-link" href="https://support.google.com/gemini/answer/13594961?hl=en" target="_blank" rel="noopener">Конфиденциальность</a></p>
+    </div>
+  </details>
+  <details class="acc fade">
+    <summary>YandexGPT / Алиса AI — интерфейс и настройки</summary>
+    <div class="acc-body">
+      <p><strong>Интерфейс:</strong> чат, список диалогов, поле ввода; «+» — файлы и фото. «Студия» — визуальные задачи, вкладка «Оживить» делает из фото короткий ролик. «Исследовать» — исследовательский режим.</p>
+      <p><strong>Настроить:</strong> войдите в нужный Яндекс ID, проверьте лимиты и подписку. Доступ к микрофону давайте только для голосовых функций. В настройках → «Управление ссылками» можно отозвать ссылки на диалоги.</p>
+      <p><strong>Различие продуктов:</strong> функции Алисы AI, бизнес-версии и API моделей не равнозначны.</p>
+      <p><a class="svc-link" href="https://alice.yandex.ru/support/ru/assistant/chat/picture-animate" target="_blank" rel="noopener">Оживление фото</a> · <a class="svc-link" href="https://alice.yandex.ru/support/ru/assistant/chat/share" target="_blank" rel="noopener">Управление ссылками</a> · <a class="svc-link" href="https://alice.yandex.ru/support/ru/assistant/alice-business/faq" target="_blank" rel="noopener">Бизнес-функции</a></p>
+    </div>
+  </details>
+
+  <div class="warn-callout fade">
+    <p><strong>Перед первым использованием любого сервиса</strong></p>
+    <ul class="dash-list">
+      <li>Открывайте официальный адрес, а не посредника с похожим названием.</li>
+      <li>Проверьте на несекретном примере: вход, текстовый ответ, нужный тип файла и конкретную функцию.</li>
+      <li>«Без VPN» не значит «локально» или «в закрытом контуре»: все перечисленные веб-чаты — облачные сервисы.</li>
+      <li>Не загружайте пароли, персональные данные и закрытые рабочие материалы без разрешения и подходящих условий обработки.</li>
+      <li>Код проверяйте в тестовой среде; агентам давайте минимальные права, а важные внешние действия подтверждайте сами.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ══════════ БЛОК 8: LLM ARENA ══════════ -->
+<section class="sec" id="s8">
+  <div class="sec-head fade">
+    <div class="num-badge n8">8</div>
+    <h2 class="sec-title">Один запрос в двух моделях: слепое сравнение в LLM Arena</h2>
+    <p class="sec-desc"><strong>LLM Arena</strong> — слепое A/B-тестирование: две нейросети отвечают на один и тот же промпт, названия скрыты, а оценка ставится только по качеству и точности ответа. Имена моделей открываются после голосования.</p>
+  </div>
+
+  <div class="metaphor fade">
+    <span class="m-ico" aria-hidden="true">☕</span>
+    <div>
+      <p><b class="m-name">Метафора: слепая дегустация</b>Видите яркую этикетку известного бренда — срабатывает магия маркетинга. Нальёте кофе в два одинаковых безымянных стакана — оценка будет честной: выберете тот, что вкуснее, а не тот, у кого дороже реклама.</p>
+      <p>Если не «щёлкнуло»: это собеседование, где двум кандидатам дали одно тестовое задание и закрыли имена в резюме. Побеждает тот, чей черновик можно сразу нести директору.</p>
+    </div>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/30_llm_arena.jpg" alt="A/B-тестирование моделей в LLM Arena: один промпт отправляется анонимным моделям A и B, пользователь сравнивает ответы по точности, следованию инструкции, формату и скорости, победы формируют рейтинг Elo" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">A/B-тестирование моделей: слепое сравнение в LLM Arena</figcaption>
+  </figure>
+
+  <h3 class="sub-title fade">📐 Пять критериев сравнения ответов</h3>
+  <div class="grid fade">
+    <div class="card"><p class="c-name">1. Точность и фактология</p><p>Есть ли выдуманные цифры, несуществующие законы или логические ошибки?</p></div>
+    <div class="card"><p class="c-name">2. Следование ограничениям</p><p>Просили таблицу из 3 колонок без вводных слов — модель так и сделала? Игнорирование формата — главный грех слабых моделей.</p></div>
+    <div class="card"><p class="c-name">3. Глубина и проработка</p><p>Поверхностная «вода» или экспертный разбор с конкретными шагами?</p></div>
+    <div class="card"><p class="c-name">4. Структура и читаемость</p><p>Списки, логичные абзацы, выделения. Можно отправить руководителю без ручной правки?</p></div>
+    <div class="card"><p class="c-name">5. Лаконичность</p><p>Нет ли пяти абзацев вежливых расшаркиваний перед сутью?</p></div>
+  </div>
+
+  <div class="viz fade">
+    <div class="viz-bar">
+      <div class="dots"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span></div>
+      <span class="viz-lbl">Слепое сравнение: оцените ответы А и Б</span>
+      <button type="button" class="viz-fs" data-fs-src="llm_arena.html" data-fs-title="Слепое сравнение: Модель А против Модели Б">⛶ На весь экран</button>
+    </div>
+    <iframe src="llm_arena.html" height="720" loading="lazy" title="Слепое сравнение: Модель А против Модели Б"></iframe>
+  </div>
+
+  <div class="grid-2 fade">
+    <div class="ok-callout"><p><strong>Зачем бизнесу внутренние A/B-тесты.</strong> Можно выяснить, что для первичной сортировки писем дорогая модель не нужна — справится модель в разы дешевле. Сотрудники перестают спорить, какая нейросеть «моднее», и выбирают по измеримому качеству.</p></div>
+    <div class="warn-callout"><p><strong>Где граница.</strong> Публичный рейтинг арены отражает вкусы тысяч людей на их задачах, а не на ваших. Для рабочего выбора сравнивайте модели на своих типовых — но обезличенных — запросах.</p></div>
+  </div>
+  <p class="src-note fade">Попробовать арену: <a class="svc-link" href="https://arena.ai/" target="_blank" rel="noopener">Arena AI</a> — открытый рейтинг языковых моделей на основе слепых сравнений. Доступ из РФ не проверялся; не отправляйте туда рабочие данные.</p>
+</section>
+
+<!-- ══════════ БЛОК 9: ИТОГИ И ДОМАШНЕЕ ЗАДАНИЕ ══════════ -->
+<section class="sec" id="s9">
+  <div class="sec-head fade">
+    <div class="num-badge n9">9</div>
+    <h2 class="sec-title">Итоги и домашнее задание</h2>
+    <p class="sec-desc">Задание собирает весь урок: сформулировать промпт по формуле из пяти элементов, получить и сравнить ответы, а затем проверить результат как эксперт.</p>
+  </div>
+
+  <h3 class="sub-title fade">🔒 Главный постулат безопасности: светофор данных</h3>
+  <div class="grid-2 fade">
+    <div class="danger-callout"><p><strong>🛑 Категорически запрещено</strong><br>Загружать в публичные и внешние нейросети реальные ТТХ изделий, закрытые чертежи, служебную переписку с грифом, персональные данные и коммерческую тайну.</p></div>
+    <div class="ok-callout"><p><strong>🟢 Разрешено для ДЗ</strong><br>Условные (синтетические) данные, обезличенные описания стандартного оборудования («насосная станция № 3», «условный блок питания БП-12»), учебные фрагменты ГОСТов и открытые регламенты.</p></div>
+  </div>
+
+  <h3 class="sub-title fade">🧱 Выберите одну из трёх рабочих задач</h3>
+  <div class="grid-3 fade">
+    <div class="card"><p class="card-title">🔧 Инженерно-технологическая</p><p class="muted">Проект инструкции или методики проверки условного узла; анализ типового журнала сбоев оборудования.</p></div>
+    <div class="card"><p class="card-title">📝 Документационная / управленческая</p><p class="muted">Сырые заметки с технического совещания → структурированный протокол с задачами и сроками.</p></div>
+    <div class="card"><p class="card-title">📊 Аналитическая</p><p class="muted">Сравнение двух вариантов комплектующих или материалов по заданным критериям — в виде таблицы.</p></div>
+  </div>
+
+  <h3 class="sub-title fade">📥 Задание по шагам</h3>
+  <div class="grid-3 fade">
+    <div class="card">
+      <p class="card-title">Шаг 1. Соберите MEGA-промпт</p>
+      <ul class="dash-list">
+        <li><strong>Роль:</strong> «Ты — главный специалист по контролю качества на производстве электронных блоков».</li>
+        <li><strong>Контекст:</strong> «Нужно подготовить краткий чек-лист проверки условного блока коммутации перед приёмкой».</li>
+        <li><strong>Задача:</strong> «Сформируй пошаговый алгоритм осмотра из 5 пунктов».</li>
+        <li><strong>Ограничения:</strong> «Деловой стиль, без общих фраз, понятные технические критерии, не придумывай несуществующие параметры».</li>
+        <li><strong>Формат:</strong> «Таблица: № этапа | Что проверяем | Нормативное значение | Действие при отклонении».</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="card-title">Шаг 2. Запустите и сравните</p>
+      <ul class="dash-list">
+        <li>Запустите промпт в выбранной нейросети — или сравните ответы двух доступных систем по пяти критериям из блока 8.</li>
+        <li>При необходимости уточните запрос: попросите убрать «воду» или сосредоточиться на рисках.</li>
+        <li>Длинная переписка — сделайте выжимку и продолжите в новом чате.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="card-title">Шаг 3. Проверьте ответ как эксперт</p>
+      <p class="muted" style="margin-bottom:8px">Заполните карточку проверки:</p>
+      <ol class="step-list">
+        <li>Есть ли в ответе выдумки или некорректные формулировки? Что именно исправлено?</li>
+        <li>Соответствует ли формат исходному ТЗ?</li>
+        <li>Какую выгоду по времени дал запрос? Например: вручную — 40 минут, ИИ — 30 секунд, правка — 3 минуты.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="prompt-box fade">
+    <div class="prompt-head">
+      <span>Шаблон промпта для ДЗ — подставьте свою задачу</span>
+      <button type="button" class="copy-btn" data-copy="prompt-dz">Копировать</button>
+    </div>
+    <pre id="prompt-dz">Роль: Ты — [должность и экспертиза].
+Контекст: [ситуация и обезличенные учебные данные].
+Задача: [что конкретно сделать].
+Ограничения: [чего делать нельзя; не придумывай параметры, которых нет в контексте].
+Формат: [таблица / список / документ — с названиями колонок или разделов].</pre>
+  </div>
+
+  <div class="warn-callout fade">
+    <p><strong>Что остаётся за человеком</strong>Нейросеть готовит черновик. Решение, проверку фактов и нормативов, а также ответственность за документ несёт сотрудник. Ответ, который «звучит убедительно», — ещё не проверенный ответ.</p>
+  </div>
+
+  <h3 class="sub-title fade">📚 Полезные материалы</h3>
+  <ul class="links-list fade">
+    <li><a class="svc-link" href="https://platform.openai.com/tokenizer" target="_blank" rel="noopener">OpenAI Tokenizer</a> — официальный токенизатор OpenAI (сайт OpenAI официально не поддерживает РФ).</li>
+    <li><a class="svc-link" href="https://gpt-tokenizer.dev/" target="_blank" rel="noopener">GPT Tokenizer</a> — сторонний инструмент разбиения текста на токены.</li>
+    <li><a class="svc-link" href="https://arena.ai/" target="_blank" rel="noopener">Arena AI</a> — рейтинг и слепое сравнение языковых моделей.</li>
+  </ul>
+</section>
+
+<!-- ══════════ ЧЕК-ЛИСТ ══════════ -->
+<section class="sec" id="checklist">
+  <div class="sec-head fade">
+    <div class="num-badge n10">10</div>
+    <h2 class="sec-title">Чек-лист: работаю с нейросетью правильно</h2>
+    <p class="sec-desc">Пройдитесь по списку перед выполнением домашнего задания и перед любой рабочей задачей с ИИ. Отметки сохраняются в этом браузере.</p>
+  </div>
+
+  <div class="card fade">
+    <div class="checklist-progress-bar"><div class="checklist-progress-fill" id="checklist-progress"></div></div>
+    <p class="checklist-count" id="checklist-count" aria-live="polite">Отмечено: 0</p>
+
+    <div class="check-group">
+      <h3>Перед первым запросом</h3>
+      <ul class="checklist-items">
+        <li><label><input type="checkbox" data-checklist-item="c1"> Открыл официальный адрес сервиса, а не посредника с похожим названием</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c2"> Проверил светофор данных: в запросе нет ПДн, коммерческой тайны и служебных материалов — только синтетика или открытые данные</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c3"> Выбрал инструмент по трём вопросам: категория данных, объём, тип задачи</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c4"> Помню: «без VPN» не значит «локально» — веб-чаты облачные</label></li>
+      </ul>
+    </div>
+
+    <div class="check-group">
+      <h3>Промпт по формуле MEGA</h3>
+      <ul class="checklist-items">
+        <li><label><input type="checkbox" data-checklist-item="c5"> Задал роль и контекст</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c6"> Сформулировал конкретную задачу</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c7"> Указал ограничения: чего делать нельзя и что не придумывать</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c8"> Описал формат ответа: таблица, список или документ с разделами</label></li>
+      </ul>
+    </div>
+
+    <div class="check-group">
+      <h3>Контекст</h3>
+      <ul class="checklist-items">
+        <li><label><input type="checkbox" data-checklist-item="c9"> Один чат — одна задача: для новой задачи открыл новый диалог</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c10"> Поставил главную задачу и ограничения в конец длинного промпта</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c11"> В длинном проекте сделал выжимку, сверил её по смыслу и перенёс в новый чат</label></li>
+      </ul>
+    </div>
+
+    <div class="check-group">
+      <h3>Проверка ответа</h3>
+      <ul class="checklist-items">
+        <li><label><input type="checkbox" data-checklist-item="c12"> Проверил факты, цифры и нормативы — нет ли выдумок</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c13"> Сверил формат ответа с исходным ТЗ</label></li>
+        <li><label><input type="checkbox" data-checklist-item="c14"> Записал выгоду по времени: вручную / с ИИ / на правку</label></li>
+      </ul>
+    </div>
+
+    <p class="checklist-done" id="checklist-done" hidden>Все пункты отмечены — можно сдавать домашнее задание.</p>
+    <button type="button" class="checklist-reset" id="checklist-reset">Сбросить отметки</button>
+  </div>
+</section>
+
+<!-- ══════════ КВИЗ ══════════ -->
+<section class="sec" id="quiz">
+  <div class="sec-head fade">
+    <div class="num-badge n11">11</div>
+    <h2 class="sec-title">Проверьте себя</h2>
+    <p class="sec-desc">Семь вопросов по материалу урока. После ответа правильный вариант подсвечивается, а ниже появляется разбор.</p>
+  </div>
+
+  <div class="quiz fade">
+    <div class="quiz-question" data-quiz="1">
+      <p class="quiz-text">1. Что на самом деле делает большая языковая модель, когда отвечает на вопрос?</p>
+      <div class="quiz-options">
+        <label><input type="radio" name="q1" value="wrong"> Находит в своей базе готовый документ и пересказывает его</label>
+        <label><input type="radio" name="q1" value="right"> Шаг за шагом выбирает наиболее вероятное продолжение текста</label>
+        <label><input type="radio" name="q1" value="wrong"> Проверяет факты в интернете перед каждым ответом</label>
+      </div>
+      <button type="button" class="quiz-check" data-quiz-check="1">Проверить</button>
+      <p class="quiz-feedback" data-quiz-feedback="1" data-explain="LLM — «Т9 на максималках»: она не ищет документ, а досочиняет ответ. Поэтому, если фактов нет, модель уверенно их додумывает." hidden></p>
+    </div>
+
+    <div class="quiz-question" data-quiz="2">
+      <p class="quiz-text">2. Какие три фактора, по уроку, стояли за прорывами в истории ИИ?</p>
+      <div class="quiz-options">
+        <label><input type="radio" name="q2" value="wrong"> Реклама, инвестиции и число пользователей</label>
+        <label><input type="radio" name="q2" value="wrong"> Шахматы, го и тест Тьюринга</label>
+        <label><input type="radio" name="q2" value="right"> Новые алгоритмы, мощность «железа» (GPU) и объёмы данных</label>
+      </div>
+      <button type="button" class="quiz-check" data-quiz-check="2">Проверить</button>
+      <p class="quiz-feedback" data-quiz-feedback="2" data-explain="Пример — AlexNet в 2012 году: большие данные из интернета плюс обучение на видеокартах дали старт буму глубокого обучения." hidden></p>
+    </div>
+
+    <div class="quiz-question" data-quiz="3">
+      <p class="quiz-text">3. Почему один и тот же объём текста на русском обычно расходует больше токенов, чем на английском?</p>
+      <div class="quiz-options">
+        <label><input type="radio" name="q3" value="wrong"> Потому что в русском шрифте больше пикселей</label>
+        <label><input type="radio" name="q3" value="right"> Модели обучали в основном на английском, и русские слова чаще дробятся на несколько токенов</label>
+        <label><input type="radio" name="q3" value="wrong"> Потому что русский текст модель переводит на английский и считает дважды</label>
+      </div>
+      <button type="button" class="quiz-check" data-quiz-check="3">Проверить</button>
+      <p class="quiz-feedback" data-quiz-feedback="3" data-explain="Токены — фрагменты слов. Размер шрифта на них не влияет, а вот язык и длина слов — влияют. Точный разрыв зависит от токенизатора." hidden></p>
+    </div>
+
+    <div class="quiz-question" data-quiz="4">
+      <p class="quiz-text">4. Что такое контекстное окно?</p>
+      <div class="quiz-options">
+        <label><input type="radio" name="q4" value="wrong"> Окно браузера, в котором открыт чат</label>
+        <label><input type="radio" name="q4" value="wrong"> Всё, что модель когда-либо прочитала при обучении</label>
+        <label><input type="radio" name="q4" value="right"> Ограниченный объём информации в токенах, который модель учитывает при ответе в одном диалоге</label>
+      </div>
+      <button type="button" class="quiz-check" data-quiz-check="4">Проверить</button>
+      <p class="quiz-feedback" data-quiz-feedback="4" data-explain="Это «рабочий стол» модели: системные инструкции, история, файлы и текущий запрос. Что не поместилось — для модели не существует." hidden></p>
+    </div>
+
+    <div class="quiz-question" data-quiz="5">
+      <p class="quiz-text">5. Вы загрузили в чат длинный отчёт, а важное условие спрятано в середине. Что делать по правилам урока?</p>
+      <div class="quiz-options">
+        <label><input type="radio" name="q5" value="right"> Поставить ключевую задачу и ограничения в самый конец промпта</label>
+        <label><input type="radio" name="q5" value="wrong"> Ничего: модель одинаково внимательна ко всему тексту</label>
+        <label><input type="radio" name="q5" value="wrong"> Дописать то же условие в середину ещё раз, крупным шрифтом</label>
+      </div>
+      <button type="button" class="quiz-check" data-quiz-check="5">Проверить</button>
+      <p class="quiz-feedback" data-quiz-feedback="5" data-explain="Эффект Lost in the Middle: лучше всего модель учитывает начало и конец контекста, а середина «растворяется»." hidden></p>
+    </div>
+
+    <div class="quiz-question" data-quiz="6">
+      <p class="quiz-text">6. Юристу нужно проверить черновик договора с персональными данными клиентов. Какой вариант соответствует уроку?</p>
+      <div class="quiz-options">
+        <label><input type="radio" name="q6" value="wrong"> Зарубежный публичный чат-бот — там лучшая орфография</label>
+        <label><input type="radio" name="q6" value="wrong"> Любой сервис, который открывается без VPN</label>
+        <label><input type="radio" name="q6" value="right"> Разрешённый в организации российский сервис или локальная модель внутри контура компании</label>
+      </div>
+      <button type="button" class="quiz-check" data-quiz-check="6">Проверить</button>
+      <p class="quiz-feedback" data-quiz-feedback="6" data-explain="Категория данных — первый из трёх вопросов выбора. «Без VPN» не значит «в закрытом контуре», а для ПДн нужно разрешение организации." hidden></p>
+    </div>
+
+    <div class="quiz-question" data-quiz="7">
+      <p class="quiz-text">7. Зачем в LLM Arena скрывают названия моделей до голосования?</p>
+      <div class="quiz-options">
+        <label><input type="radio" name="q7" value="wrong"> Чтобы разработчики не узнали, кто голосовал</label>
+        <label><input type="radio" name="q7" value="right"> Чтобы оценка шла по качеству ответа, а не по известности бренда</label>
+        <label><input type="radio" name="q7" value="wrong"> Потому что у моделей нет названий</label>
+      </div>
+      <button type="button" class="quiz-check" data-quiz-check="7">Проверить</button>
+      <p class="quiz-feedback" data-quiz-feedback="7" data-explain="Как слепая дегустация: без этикетки выбирают то, что действительно лучше, по пяти критериям — от точности до лаконичности." hidden></p>
+    </div>
+  </div>
+
+  <p class="quiz-score-box fade" id="quiz-score" style="margin-top:18px" aria-live="polite">Отвечено: 0 / 7</p>
+</section>
+
+<!-- ══════════ ЗАКЛЮЧЕНИЕ ══════════ -->
+<section class="sec" id="final">
+  <div class="sec-head fade">
+    <h2 class="sec-title">Что забрать с собой</h2>
+  </div>
+
+  <ol class="conclusion-list fade">
+    <li><strong>Прорывы ИИ рождались на стыке трёх факторов</strong> — алгоритмов, мощности железа и данных. Сегодня технология впервые вышла за пределы лабораторий.</li>
+    <li><strong>LLM даёт не правду, а наиболее вероятное продолжение текста.</strong> Факты, цифры и ссылки в ответе проверяет человек.</li>
+    <li><strong>Промпт — это ТЗ:</strong> роль, контекст, задача, ограничения и формат. Токены — бюджет диалога, и русский текст расходует его быстрее.</li>
+    <li><strong>Контекстное окно — рабочий стол модели:</strong> один чат — одна задача, главное — в конец, длинную историю — в проверенную выжимку.</li>
+    <li><strong>Нейросеть выбирают по данным, объёму и задаче, а не по рейтингу.</strong> Служебные данные — только в разрешённые сервисы, качество — через слепое сравнение на своих обезличенных задачах.</li>
+  </ol>
+
+  <div class="key-callout fade"><p>Нейросеть — ваш быстрый, но фантазирующий стажёр. <span>Ставьте ему чёткое ТЗ, не давайте секретов и проверяйте результат</span> — тогда 40 минут ручной работы превращаются в 3 минуты правки.</p></div>
+</section>
+
+</main>
+
+<div class="overlay" id="lightbox" aria-hidden="true">
+  <a class="overlay-download" id="lightbox-download" download aria-label="Скачать изображение">⬇ Скачать</a>
+  <button type="button" class="overlay-close" id="lightbox-close" aria-label="Закрыть">✕</button>
+  <img id="lightbox-img" alt="">
+</div>
+
+<div id="fs-overlay" aria-hidden="true">
+  <div id="fs-bar">
+    <span id="fs-title"></span>
+    <button type="button" id="fs-close" aria-label="Закрыть полноэкранный режим">✕</button>
+  </div>
+  <iframe id="fs-frame" title="Полноэкранная визуализация"></iframe>
+</div>
+
+<footer>
+  <p>Урок 1 «Как устроен современный ИИ» · ДПО-1 «Основы применения ИИ» · 2026</p>
+  <p>Клуб «ИИ в образовании» · материалы урока — Денис Шандалин</p>
+  <p class="src-note">Сведения о сервисах проверены по открытым официальным источникам на 13 сентября 2026 года и могут меняться.</p>
+</footer>
+
+<script>
+/* Префикс имени файла при скачивании инфографики */
+const BRAND = "dpo1-urok1";
+
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* Появление блоков при скролле */
+if (!reduceMotion && "IntersectionObserver" in window) {
+  const reveal = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("in");
+        reveal.unobserve(entry.target);
+      }
+    });
+  }, {threshold: 0.06, rootMargin: "0px 0px -24px"});
+  document.querySelectorAll(".fade").forEach((element) => reveal.observe(element));
+} else {
+  document.querySelectorAll(".fade").forEach((element) => element.classList.add("in"));
+}
+
+/* Подсветка активной секции в навбаре */
+const navLinks = [...document.querySelectorAll(".nav-link")];
+const sections = [...document.querySelectorAll("main section[id]")];
+if ("IntersectionObserver" in window) {
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      navLinks.forEach((link) => {
+        const isActive = link.getAttribute("href") === `#${entry.target.id}`;
+        link.classList.toggle("active", isActive);
+        /* Прокручиваем только сам навбар (на узком экране), не страницу */
+        if (isActive) {
+          const bar = link.parentElement;
+          bar.scrollTo({left: link.offsetLeft - (bar.clientWidth - link.offsetWidth) / 2});
+        }
+      });
+    });
+  }, {rootMargin: "-35% 0px -55%", threshold: 0});
+  sections.forEach((section) => sectionObserver.observe(section));
+}
+
+/* Лайтбокс */
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img");
+const lightboxDownload = document.getElementById("lightbox-download");
+function brandedFilename(url) {
+  const name = url.split("/").pop().split("?")[0];
+  return `${BRAND}_${name}`;
+}
+document.querySelectorAll(".img-card[data-lightbox]").forEach((card) => {
+  card.setAttribute("tabindex", "0");
+  card.setAttribute("role", "button");
+  const open = () => {
+    if (card.classList.contains("img-missing")) return;
+    const img = card.querySelector("img");
+    lightboxImg.src = img.src;
+    lightboxImg.alt = img.alt;
+    lightboxDownload.href = img.src;
+    lightboxDownload.download = brandedFilename(img.src);
+    card.setAttribute("aria-label", `Увеличить: ${img.alt}`);
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.getElementById("lightbox-close").focus();
+  };
+  card.addEventListener("click", open);
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); }
+  });
+});
+function closeLightbox() {
+  if (lightbox.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
+  lightbox.classList.remove("open");
+  lightbox.setAttribute("aria-hidden", "true");
+  lightboxImg.src = "";
+}
+document.getElementById("lightbox-close").addEventListener("click", closeLightbox);
+lightbox.addEventListener("click", (event) => { if (event.target === lightbox) closeLightbox(); });
+
+/* Фуллскрин для iframe-карточек */
+const fsOverlay = document.getElementById("fs-overlay");
+const fsFrame = document.getElementById("fs-frame");
+const fsTitle = document.getElementById("fs-title");
+document.querySelectorAll(".viz-fs").forEach((button) => {
+  button.addEventListener("click", () => {
+    fsFrame.src = button.dataset.fsSrc;
+    fsTitle.textContent = button.dataset.fsTitle;
+    fsOverlay.classList.add("open");
+    fsOverlay.setAttribute("aria-hidden", "false");
+    document.getElementById("fs-close").focus();
+  });
+});
+function closeFs() {
+  if (fsOverlay.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
+  fsOverlay.classList.remove("open");
+  fsOverlay.setAttribute("aria-hidden", "true");
+  fsFrame.src = "";
+}
+document.getElementById("fs-close").addEventListener("click", closeFs);
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (fsOverlay.classList.contains("open")) { closeFs(); } else { closeLightbox(); }
+});
+
+/* На узком экране подгоняем высоту демо под содержимое, чтобы не было прокрутки внутри iframe */
+const narrowQuery = window.matchMedia("(max-width: 760px)");
+document.querySelectorAll(".viz iframe").forEach((frame) => {
+  const baseHeight = Number(frame.getAttribute("height")) || 560;
+  let observer = null;
+  const fit = () => {
+    try {
+      const body = frame.contentDocument && frame.contentDocument.body;
+      if (!body) return;
+      frame.style.height = narrowQuery.matches ? `${Math.max(baseHeight, Math.ceil(body.scrollHeight))}px` : "";
+    } catch { /* другой origin (file://) — остаётся фиксированная высота */ }
+  };
+  const watch = () => {
+    fit();
+    try {
+      if (observer) observer.disconnect();
+      observer = new ResizeObserver(fit);
+      observer.observe(frame.contentDocument.body);
+    } catch { /* нет доступа к документу демо */ }
+  };
+  frame.addEventListener("load", watch);
+  try {
+    const doc = frame.contentDocument;
+    if (doc && doc.readyState === "complete" && doc.URL !== "about:blank") watch();
+  } catch { /* нет доступа к документу демо */ }
+  if (narrowQuery.addEventListener) narrowQuery.addEventListener("change", fit);
+});
+
+/* Копирование промптов */
+document.querySelectorAll("[data-copy]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const code = document.getElementById(button.dataset.copy);
+    if (!code) return;
+    const original = button.textContent;
+    try {
+      await navigator.clipboard.writeText(code.innerText);
+      button.textContent = "Скопировано";
+    } catch {
+      button.textContent = "Выделите текст";
+    }
+    window.setTimeout(() => { button.textContent = original; }, 1600);
+  });
+});
+
+/* Чек-лист */
+const CHECKLIST_KEY = "dpo1-urok1-kak-ustroen-ii-checklist";
+const checklistInputs = [...document.querySelectorAll("[data-checklist-item]")];
+const checklistProgress = document.getElementById("checklist-progress");
+const checklistDone = document.getElementById("checklist-done");
+const checklistCount = document.getElementById("checklist-count");
+function loadChecklistState() {
+  try { return JSON.parse(localStorage.getItem(CHECKLIST_KEY) || "{}"); } catch { return {}; }
+}
+function saveChecklistState(state) {
+  try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
+}
+function renderChecklistProgress() {
+  const checked = checklistInputs.filter((input) => input.checked).length;
+  checklistProgress.style.width = `${Math.round((checked / checklistInputs.length) * 100)}%`;
+  checklistCount.textContent = `Отмечено: ${checked} из ${checklistInputs.length}`;
+  checklistDone.hidden = checked !== checklistInputs.length;
+}
+const savedChecklist = loadChecklistState();
+checklistInputs.forEach((input) => {
+  const key = input.dataset.checklistItem;
+  input.checked = Boolean(savedChecklist[key]);
+  input.addEventListener("change", () => {
+    const state = loadChecklistState();
+    state[key] = input.checked;
+    saveChecklistState(state);
+    renderChecklistProgress();
+  });
+});
+document.getElementById("checklist-reset").addEventListener("click", () => {
+  checklistInputs.forEach((input) => { input.checked = false; });
+  saveChecklistState({});
+  renderChecklistProgress();
+});
+renderChecklistProgress();
+
+/* Квиз */
+const QUIZ_TOTAL = document.querySelectorAll(".quiz-question").length;
+let quizAnswered = 0;
+let quizCorrect = 0;
+const quizScoreEl = document.getElementById("quiz-score");
+quizScoreEl.textContent = `Отвечено: 0 / ${QUIZ_TOTAL}`;
+document.querySelectorAll(".quiz-check").forEach((button) => {
+  button.addEventListener("click", () => {
+    const index = button.dataset.quizCheck;
+    const question = document.querySelector(`.quiz-question[data-quiz="${index}"]`);
+    const selected = question.querySelector(`input[name="q${index}"]:checked`);
+    const feedback = document.querySelector(`[data-quiz-feedback="${index}"]`);
+    if (!selected) {
+      feedback.textContent = "Выберите вариант ответа.";
+      feedback.className = "quiz-feedback incorrect";
+      feedback.hidden = false;
+      return;
+    }
+    if (button.disabled) return;
+    const isCorrect = selected.value === "right";
+    const explain = feedback.dataset.explain || "";
+    feedback.textContent = `${isCorrect ? "Верно! " : "Не совсем — правильный вариант подсвечен выше. "}${explain}`;
+    feedback.className = `quiz-feedback ${isCorrect ? "correct" : "incorrect"}`;
+    feedback.hidden = false;
+    question.querySelectorAll("input").forEach((input) => { input.disabled = true; });
+    question.querySelector('input[value="right"]').closest("label").classList.add("quiz-correct-answer");
+    button.disabled = true;
+    quizAnswered += 1;
+    if (isCorrect) quizCorrect += 1;
+    quizScoreEl.textContent = quizAnswered === QUIZ_TOTAL
+      ? `Готово: ${quizCorrect} из ${QUIZ_TOTAL} верно`
+      : `Отвечено: ${quizAnswered} / ${QUIZ_TOTAL}`;
+  });
+});
+</script>
+</body>
+</html>

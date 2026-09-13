@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Конструктор MEGA-промпта</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --green:#10b981;
+  --green-lt:#ecfdf5;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --red-lt:#fef2f2;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin:2px 0 12px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Пресеты — кнопки-«таблетки» как в эталонах */
+.row-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:7px}
+.row-label span{text-transform:none;letter-spacing:0;font-weight:600}
+.choices{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.choice-btn{
+  padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:#fff;font-family:inherit;
+  font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.choice-btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.choice-btn.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.choice-btn.clear{border-style:dashed}
+.choice-btn:focus-visible,.copy-btn:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+/* Две колонки: поля слева, результат справа */
+.layout{display:grid;grid-template-columns:1.12fr 1fr;gap:18px;align-items:start;margin-bottom:12px}
+.fields{display:flex;flex-direction:column;gap:7px}
+.field label{display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:800;margin-bottom:3px;line-height:1.3}
+.field .num{
+  width:20px;height:20px;border-radius:50%;background:var(--indigo-lt);color:var(--indigo-dk);
+  font-size:.72rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.field .hint{font-weight:600;color:var(--muted);font-size:.78rem}
+.field textarea{
+  display:block;width:100%;font-family:inherit;font-size:.84rem;line-height:1.4;color:var(--text);
+  background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:6px 10px;
+  resize:none;max-height:150px;overflow-y:auto;transition:border-color .18s,background .18s;
+}
+.field textarea::placeholder{color:#94a3b8}
+.field textarea.filled{background:#fff;border-color:#cbd5e1}
+.field textarea:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:1px;background:#fff}
+
+/* Промпт-бокс (паттерн 7) */
+.prompt-box{background:#0f172a;border-radius:14px;overflow:hidden;margin-bottom:10px}
+.prompt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 16px;background:#1e293b;color:#e2e8f0;font-size:.82rem;font-weight:700}
+.copy-btn{padding:5px 12px;border-radius:8px;border:1px solid #475569;background:transparent;color:#e2e8f0;font-family:inherit;font-size:.76rem;font-weight:700;cursor:pointer;transition:background .2s;white-space:nowrap}
+.copy-btn:hover{background:#334155}
+.prompt-body{padding:12px 16px;color:#e2e8f0;font-size:.84rem;line-height:1.5;min-height:170px;max-height:300px;overflow-y:auto}
+.prompt-body:focus-visible{outline:2px solid #a5b4fc;outline-offset:-3px}
+.seg{margin-bottom:5px;white-space:pre-wrap;word-break:break-word}
+.seg:last-child{margin-bottom:0}
+.tag{
+  display:inline-block;margin-right:8px;padding:0 6px;border-radius:6px;background:#334155;color:#a5b4fc;
+  font-size:.66rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;vertical-align:1px;
+  user-select:none;-webkit-user-select:none;
+}
+.empty-note{color:#94a3b8;font-style:italic}
+
+/* Чипы-индикаторы */
+.chips{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin-bottom:10px}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;
+  border:1px solid var(--border);background:#f1f5f9;color:#94a3b8;font-size:.8rem;font-weight:700;transition:all .18s;
+}
+.chip .ic{
+  width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-size:.66rem;font-weight:900;background:#e2e8f0;color:#94a3b8;
+}
+.chip.on{background:var(--green-lt);border-color:#a7f3d0;color:#065f46}
+.chip.on .ic{background:var(--green);color:#fff}
+
+/* Оценка полноты ТЗ */
+.score{border-radius:12px;padding:10px 14px;border:1px solid var(--border)}
+.score.low{background:var(--red-lt);border-color:#fecaca}
+.score.mid{background:var(--amber-lt);border-color:#fde68a}
+.score.full{background:var(--green-lt);border-color:#a7f3d0}
+.score-top{display:flex;align-items:center;gap:10px}
+.score-num{font-size:1.2rem;font-weight:900;white-space:nowrap;line-height:1.2}
+.score-text{font-weight:800;font-size:.9rem;line-height:1.3}
+.score.low .score-num,.score.low .score-text{color:#991b1b}
+.score.mid .score-num,.score.mid .score-text{color:#92400e}
+.score.full .score-num,.score.full .score-text{color:#065f46}
+.score-missing{font-size:.8rem;color:#475569;margin-top:3px}
+.score-result{font-size:.82rem;color:#334155;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(15,23,42,.18)}
+.score-result b{color:var(--text)}
+
+/* Постоянная предупреждающая плашка */
+.warn{
+  display:flex;gap:10px;align-items:flex-start;background:var(--amber-lt);border:1px solid #fde68a;
+  border-radius:12px;padding:9px 14px;font-size:.84rem;color:#92400e;line-height:1.4;
+}
+.warn b{color:#78350f}
+.warn .w-ic{font-size:1rem;line-height:1.3;flex-shrink:0}
+
+@media (max-width:760px){
+  .layout{grid-template-columns:1fr}
+  .prompt-body{max-height:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<h1>Конструктор MEGA-промпта</h1>
+<p class="sub">Промпт — не вопрос, а техническое задание. Заполните пять элементов или выберите пример. Garbage In — Garbage Out.</p>
+
+<div class="row-label" id="presets-label">Учебные примеры <span>· «ДЗ» — шаг 1 домашнего задания</span></div>
+<div class="choices" role="group" aria-labelledby="presets-label">
+  <button type="button" class="choice-btn" data-preset="vague" aria-pressed="false">Размытый запрос</button>
+  <button type="button" class="choice-btn" data-preset="letter" aria-pressed="false">Письмо о задержке</button>
+  <button type="button" class="choice-btn" data-preset="checklist" aria-pressed="false">ДЗ: чек-лист приёмки</button>
+  <button type="button" class="choice-btn" data-preset="minutes" aria-pressed="false">ДЗ: протокол совещания</button>
+  <button type="button" class="choice-btn" data-preset="compare" aria-pressed="false">ДЗ: сравнение комплектующих</button>
+  <button type="button" class="choice-btn clear" id="clear-btn">Очистить</button>
+</div>
+
+<div class="layout">
+  <!-- Слева: пять элементов формулы -->
+  <div class="fields">
+    <div class="field">
+      <label for="f-role"><span class="num" aria-hidden="true">1</span>Роль <span class="hint">— кем ИИ должен себя вообразить</span></label>
+      <textarea id="f-role" rows="2" placeholder="Например: Ты — главный технолог производственного предприятия."></textarea>
+    </div>
+    <div class="field">
+      <label for="f-context"><span class="num" aria-hidden="true">2</span>Контекст <span class="hint">— входные данные и ситуация</span></label>
+      <textarea id="f-context" rows="2" placeholder="Например: Мы запускаем новую линию упаковки, бюджет ограничен."></textarea>
+    </div>
+    <div class="field">
+      <label for="f-task"><span class="num" aria-hidden="true">3</span>Задача <span class="hint">— что конкретно сделать</span></label>
+      <textarea id="f-task" rows="2" placeholder="Например: Составь перечень потенциальных рисков при запуске."></textarea>
+    </div>
+    <div class="field">
+      <label for="f-limits"><span class="num" aria-hidden="true">4</span>Ограничения <span class="hint">— чего делать нельзя</span></label>
+      <textarea id="f-limits" rows="2" placeholder="Например: Без вводных слов и общих фраз, опирайся только на производственные факты."></textarea>
+    </div>
+    <div class="field">
+      <label for="f-format"><span class="num" aria-hidden="true">5</span>Формат ответа <span class="hint">— как оформить результат</span></label>
+      <textarea id="f-format" rows="2" placeholder="Например: Таблица из 3 колонок: Риск | Вероятность | Мера защиты."></textarea>
+    </div>
+  </div>
+
+  <!-- Справа: готовый промпт, индикаторы и оценка -->
+  <div class="side">
+    <div class="prompt-box">
+      <div class="prompt-head">
+        <span>Готовый промпт</span>
+        <button type="button" class="copy-btn" id="copy-btn">Копировать</button>
+      </div>
+      <div class="prompt-body" id="prompt-out" tabindex="0" role="region" aria-label="Готовый промпт"></div>
+    </div>
+
+    <ul class="chips" id="chips" aria-label="Элементы формулы"></ul>
+
+    <div class="score low" id="score" aria-live="polite">
+      <div class="score-top">
+        <span class="score-num" id="score-num">0 из 5</span>
+        <span class="score-text" id="score-text"></span>
+      </div>
+      <div class="score-missing" id="score-missing"></div>
+      <div class="score-result" id="score-result" hidden></div>
+    </div>
+  </div>
+</div>
+
+<div class="warn" role="note">
+  <span class="w-ic" aria-hidden="true">⚠</span>
+  <span><b>Только синтетические данные:</b> не вставляйте реальные ТТХ, закрытые чертежи, служебную переписку, персональные данные и коммерческую тайну во внешние нейросети.</span>
+</div>
+
+<script>
+// Пять элементов формулы — в этом порядке собирается промпт
+const FIELDS = [
+  {key: "role", label: "Роль"},
+  {key: "context", label: "Контекст"},
+  {key: "task", label: "Задача"},
+  {key: "limits", label: "Ограничения"},
+  {key: "format", label: "Формат"},
+];
+
+// Учебные примеры; данные условные
+const PRESETS = {
+  vague: {
+    values: {
+      role: "",
+      context: "",
+      task: "Напиши письмо клиенту о задержке поставки оборудования.",
+      limits: "",
+      format: "",
+    },
+    note: {label: "Результат:", text: "сухой шаблонный текст, который звучит отстранённо и может разозлить клиента"},
+  },
+  letter: {
+    values: {
+      role: "Ты — опытный клиентский менеджер в B2G-сегменте.",
+      context: "Наша компания задерживает поставку станка на 3 дня из-за логистики. Получатель — директор завода.",
+      task: "Напиши вежливое, эмпатичное служебное письмо: объясни причину и предложи компенсацию — бесплатное сервисное обслуживание на месяц.",
+      limits: "Без канцелярита и лишних оправданий; не обещай сроков и условий, которых нет в контексте; до 1200 знаков.",
+      format: "Готовый черновик письма с темой.",
+    },
+    note: {label: "Результат:", text: "готовое к отправке письмо, которое сохраняет лояльность клиента"},
+  },
+  checklist: {
+    values: {
+      role: "Ты — главный специалист по контролю качества на производстве электронных блоков.",
+      context: "Нужно подготовить краткий чек-лист проверки условного блока коммутации перед приёмкой. Данные учебные, условные.",
+      task: "Сформируй пошаговый алгоритм осмотра из 5 пунктов.",
+      limits: "Строго деловой стиль, без общих фраз, понятные технические критерии. Не придумывай несуществующие параметры — если значения нет, пиши «уточнить по документации».",
+      format: "Таблица: № этапа | Что проверяем | Нормативное значение | Действие при отклонении.",
+    },
+    note: {label: "Шаг 1 ДЗ:", text: "скопируйте и адаптируйте под свой условный узел"},
+  },
+  minutes: {
+    values: {
+      role: "Ты — секретарь технического совещания.",
+      context: "Ниже сырые заметки с совещания по условной насосной станции № 3: [вставьте обезличенные заметки].",
+      task: "Преобразуй заметки в протокол с решениями, задачами, ответственными и сроками.",
+      limits: "Не добавляй решений и сроков, которых нет в заметках; неясное помечай «уточнить».",
+      format: "Шапка протокола, список решений, таблица: Задача | Ответственный | Срок.",
+    },
+    note: {label: "Шаг 1 ДЗ:", text: "вставьте обезличенные заметки вместо [скобок]"},
+  },
+  compare: {
+    values: {
+      role: "Ты — инженер-технолог, который готовит сравнение комплектующих к закупке.",
+      context: "Выбираем между двумя условными блоками питания БП-12 и БП-15. Характеристики: [вставьте открытые данные].",
+      task: "Сравни варианты по заданным критериям и дай рекомендацию.",
+      limits: "Опирайся только на приведённые характеристики; если данных не хватает — так и напиши, не додумывай.",
+      format: "Таблица: Критерий | БП-12 | БП-15 | Комментарий, затем вывод в двух предложениях.",
+    },
+    note: {label: "Шаг 1 ДЗ:", text: "вставьте открытые характеристики вместо [скобок]"},
+  },
+};
+
+const LEVELS = {
+  low: "Размытый запрос — результат непредсказуем",
+  mid: "Уже лучше — добавьте недостающее",
+  full: "Полное ТЗ — результат совпадёт с ожиданиями чаще",
+};
+
+const inputs = {};
+FIELDS.forEach((f) => { inputs[f.key] = document.getElementById(`f-${f.key}`); });
+
+const promptOut = document.getElementById("prompt-out");
+const chipsBox = document.getElementById("chips");
+const scoreBox = document.getElementById("score");
+const scoreNum = document.getElementById("score-num");
+const scoreText = document.getElementById("score-text");
+const scoreMissing = document.getElementById("score-missing");
+const scoreResult = document.getElementById("score-result");
+const copyBtn = document.getElementById("copy-btn");
+const presetButtons = [...document.querySelectorAll("[data-preset]")];
+
+let activePreset = null;
+let lastScoreKey = "";
+
+// Чипы создаём один раз, дальше только переключаем состояние
+const chipEls = FIELDS.map((f) => {
+  const li = document.createElement("li");
+  li.className = "chip";
+  const ic = document.createElement("span");
+  ic.className = "ic";
+  ic.setAttribute("aria-hidden", "true");
+  const name = document.createElement("span");
+  name.textContent = f.label;
+  const state = document.createElement("span");
+  state.className = "sr-only";
+  li.append(ic, name, state);
+  chipsBox.appendChild(li);
+  return {li, ic, state};
+});
+
+// Высота поля подстраивается под текст, чтобы на проекторе ничего не пряталось
+function autoGrow(el) {
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight + 2}px`;
+}
+
+function filledFields() {
+  return FIELDS.filter((f) => inputs[f.key].value.trim() !== "");
+}
+
+function buildPromptText() {
+  return filledFields().map((f) => inputs[f.key].value.trim()).join("\n");
+}
+
+function presetStillMatches() {
+  if (!activePreset) return false;
+  const values = PRESETS[activePreset].values;
+  return FIELDS.every((f) => inputs[f.key].value === values[f.key]);
+}
+
+function render() {
+  const filled = filledFields();
+
+  // Собираем промпт: элементы по порядку, пустые пропускаем
+  promptOut.textContent = "";
+  if (filled.length === 0) {
+    const p = document.createElement("p");
+    p.className = "empty-note";
+    p.textContent = "Пока пусто. Заполните поля слева — промпт соберётся здесь по порядку элементов.";
+    promptOut.appendChild(p);
+  } else {
+    filled.forEach((f) => {
+      const p = document.createElement("p");
+      p.className = "seg";
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = f.label;
+      p.append(tag, inputs[f.key].value.trim());
+      promptOut.appendChild(p);
+    });
+  }
+
+  // Чипы и подсветка заполненных полей
+  FIELDS.forEach((f, i) => {
+    const isOn = filled.includes(f);
+    chipEls[i].li.classList.toggle("on", isOn);
+    chipEls[i].ic.textContent = isOn ? "✓" : "";
+    chipEls[i].state.textContent = isOn ? " — заполнено" : " — пусто";
+    inputs[f.key].classList.toggle("filled", isOn);
+  });
+
+  // Оценка: обновляем только при реальном изменении, чтобы экранный диктор не повторял одно и то же
+  const n = filled.length;
+  const level = n <= 2 ? "low" : n < 5 ? "mid" : "full";
+  const missing = FIELDS.filter((f) => !filled.includes(f)).map((f) => f.label);
+  const note = presetStillMatches() ? PRESETS[activePreset].note : null;
+  const key = `${n}|${missing.join(",")}|${note ? activePreset : ""}`;
+  if (key === lastScoreKey) return;
+  lastScoreKey = key;
+
+  scoreBox.className = `score ${level}`;
+  scoreNum.textContent = `${n} из 5`;
+  scoreText.textContent = LEVELS[level];
+  if (n === 5) {
+    scoreMissing.textContent = "Все пять элементов на месте — промпт можно копировать.";
+  } else if (n === 0) {
+    scoreMissing.textContent = `Не хватает всех элементов: ${missing.join(" · ")}`;
+  } else {
+    scoreMissing.textContent = `Не хватает: ${missing.join(" · ")}`;
+  }
+  scoreResult.textContent = "";
+  if (note) {
+    const b = document.createElement("b");
+    b.textContent = note.label;
+    scoreResult.append(b, ` ${note.text}`);
+    scoreResult.hidden = false;
+  } else {
+    scoreResult.hidden = true;
+  }
+}
+
+function setActivePreset(id) {
+  activePreset = id;
+  presetButtons.forEach((b) => {
+    const isActive = b.dataset.preset === id;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function loadPreset(id) {
+  const values = PRESETS[id].values;
+  FIELDS.forEach((f) => { inputs[f.key].value = values[f.key]; });
+  setActivePreset(id);
+  FIELDS.forEach((f) => autoGrow(inputs[f.key]));
+  promptOut.scrollTop = 0;
+  render();
+}
+
+presetButtons.forEach((button) => {
+  button.addEventListener("click", () => loadPreset(button.dataset.preset));
+});
+
+document.getElementById("clear-btn").addEventListener("click", () => {
+  FIELDS.forEach((f) => { inputs[f.key].value = ""; });
+  setActivePreset(null);
+  FIELDS.forEach((f) => autoGrow(inputs[f.key]));
+  render();
+});
+
+FIELDS.forEach((f) => {
+  inputs[f.key].addEventListener("input", () => {
+    autoGrow(inputs[f.key]);
+    render();
+  });
+});
+
+// Копирование: если буфер недоступен — выделяем текст, чтобы скопировать вручную
+let copyTimer = 0;
+copyBtn.addEventListener("click", async () => {
+  const text = buildPromptText();
+  if (!text) {
+    copyBtn.textContent = "Сначала заполните поля";
+  } else {
+    try {
+      await navigator.clipboard.writeText(text);
+      copyBtn.textContent = "Скопировано";
+    } catch {
+      copyBtn.textContent = "Выделите текст";
+      const range = document.createRange();
+      range.selectNodeContents(promptOut);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+  window.clearTimeout(copyTimer);
+  copyTimer = window.setTimeout(() => { copyBtn.textContent = "Копировать"; }, 1600);
+});
+
+// При смене ширины переносы строк меняются — пересчитываем высоту полей
+let resizeTimer = 0;
+window.addEventListener("resize", () => {
+  window.clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(() => FIELDS.forEach((f) => autoGrow(inputs[f.key])), 120);
+});
+
+loadPreset("vague");
+</script>
+</body>
+</html>

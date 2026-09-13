@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Как LLM досочиняет ответ</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --green:#10b981;
+  --green-lt:#ecfdf5;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --red-lt:#fef2f2;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin:2px 0 14px}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.row-label{font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+
+/* Вкладки */
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tab{
+  padding:9px 18px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.88rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.tab:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.tab.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.tab:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+/* Сцена: слева диалог, справа «что видит модель» */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+
+.msg{display:flex;flex-direction:column;gap:3px}
+.who{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.bubble{border:1px solid var(--border);border-radius:14px;padding:10px 14px;font-size:.95rem;line-height:1.5}
+.msg.user{align-items:flex-end;text-align:right}
+.msg.user .bubble{background:#f8fafc;border-radius:14px 14px 4px 14px;text-align:left;max-width:94%}
+.msg.bot .bubble{background:#fff;border-color:#c7d2fe;border-radius:14px 14px 14px 4px;min-height:48px}
+.placeholder{color:var(--muted);font-style:italic}
+.cursor{display:inline-block;color:var(--indigo);font-weight:700;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+mark.new{background:var(--indigo-lt);color:var(--indigo-dk);font-weight:700;border-radius:5px;padding:0 3px;box-shadow:0 0 0 1px #c7d2fe inset;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+
+.panel{border:1px solid var(--border);border-radius:14px;padding:14px 16px 16px;background:#f8fafc}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+.phrase{font-size:.98rem;font-weight:700;margin-bottom:10px}
+
+/* Кандидаты с полосами вероятностей */
+.cands{list-style:none;display:flex;flex-direction:column;gap:6px}
+.cand{border:1px solid var(--border);border-radius:10px;padding:6px 12px 9px;background:#fff;transition:background .25s,border-color .25s,box-shadow .25s}
+.cand-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:.92rem;font-weight:700}
+.cand-pct{flex-shrink:0;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.cand.other .cand-label{color:var(--muted);font-style:italic;font-weight:600}
+.track{height:10px;border-radius:100px;background:#f1f5f9;overflow:hidden;margin-top:5px}
+.fill{height:100%;width:0;border-radius:100px;background:#94a3b8;transition:width .9s cubic-bezier(.2,.7,.3,1)}
+.cand.chosen{border-color:var(--indigo);background:var(--indigo-lt);box-shadow:0 0 0 1px var(--indigo) inset}
+.cand.chosen .fill{background:linear-gradient(90deg,var(--indigo),var(--cyan))}
+.cand.chosen .cand-pct{color:var(--indigo-dk)}
+.tag{display:inline-block;margin-left:8px;padding:0 8px;border-radius:100px;background:var(--indigo);color:#fff;font-size:.7rem;font-weight:800;line-height:1.6;vertical-align:2px;font-style:normal}
+.cands-empty{border:1px dashed #cbd5e1;border-radius:10px;padding:18px 14px;text-align:center;color:var(--muted);font-size:.88rem;background:#fff}
+
+.hint{margin-top:8px;font-size:.84rem;color:#475569;line-height:1.45}
+.hint b{color:var(--text)}
+
+.dots{display:flex;gap:5px}
+.dots i{display:block;width:22px;height:6px;border-radius:100px;background:#e2e8f0}
+.dots i.done{background:var(--indigo)}
+.dots i.now{background:var(--cyan)}
+
+/* Кнопки */
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{
+  padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.88rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.btn.primary{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.btn.primary:hover{background:var(--indigo-dk);border-color:var(--indigo-dk);color:#fff}
+.btn:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+/* Плашки-выводы */
+.plate{border-radius:12px;padding:11px 15px;font-size:.9rem;line-height:1.45;border:1px solid}
+.plate b{display:block;font-weight:800;margin-bottom:1px}
+.plate.info{background:var(--indigo-lt);border-color:#c7d2fe;color:#312e81}
+.plate.bad{background:var(--red-lt);border-color:#fecaca;color:#991b1b}
+.plate.ok{background:var(--green-lt);border-color:#a7f3d0;color:#065f46}
+.appear{animation:appear .4s ease both}
+.appear.late{animation-delay:.7s}
+@keyframes appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Карточка «биографии» */
+.bio{border:1px solid var(--border);border-radius:14px;background:#fff;padding:14px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.bio-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.avatar{flex-shrink:0;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--indigo),var(--cyan));color:#fff;font-weight:900;font-size:.95rem}
+.bio-name{display:block;font-size:1.05rem;font-weight:800;line-height:1.25}
+.bio-role{display:block;font-size:.8rem;color:var(--muted)}
+.bio-text{font-size:.92rem;line-height:1.5}
+.bio-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.bio-tags span{font-size:.74rem;font-weight:700;color:var(--indigo-dk);background:var(--indigo-lt);border-radius:100px;padding:2px 9px}
+
+.note{margin-top:12px;font-size:.76rem;color:var(--muted)}
+
+@media (max-width:760px){
+  body{padding:16px 16px 20px}
+  .stage{grid-template-columns:1fr}
+  .tab{flex:1 1 auto;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<h1>Как LLM досочиняет ответ</h1>
+<p class="sub">LLM — не поисковик, а «супер-Т9»: на каждом шаге она выбирает самое вероятное продолжение текста. Посмотрите, как из этого получается и верный ответ, и уверенная выдумка.</p>
+
+<div class="tabs" role="tablist" aria-label="Режим демонстрации">
+  <button type="button" class="tab active" id="tab-word" role="tab" aria-selected="true" aria-controls="panel-word">Следующее слово</button>
+  <button type="button" class="tab" id="tab-halluc" role="tab" aria-selected="false" aria-controls="panel-halluc" tabindex="-1">Галлюцинация по шагам</button>
+</div>
+
+<!-- Вкладка 1: следующее слово -->
+<section id="panel-word" role="tabpanel" aria-labelledby="tab-word">
+  <div class="stage">
+    <div class="col">
+      <div class="msg user">
+        <span class="who">Вы</span>
+        <p class="bubble">Какой день идёт после вторника?</p>
+      </div>
+      <div class="msg bot">
+        <span class="who">Модель</span>
+        <p class="bubble" id="w-answer"></p>
+      </div>
+      <div class="plate info appear" id="w-explain" hidden>
+        <b><span aria-hidden="true">💡 </span>Что произошло</b>
+        Модель выбрала самое вероятное продолжение, а не «нашла ответ в базе». Здесь самое вероятное совпало с правдой: в текстах, на которых она училась, после вторника почти всегда идёт среда.
+      </div>
+      <div class="actions" id="w-more" hidden>
+        <button type="button" class="btn" id="w-go-halluc">А если фактов нет? Галлюцинация по шагам →</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="row-label">Кандидаты на следующее слово</span></div>
+      <p class="phrase">«День после вторника — …»</p>
+      <ul class="cands" id="w-cands"></ul>
+      <div class="actions">
+        <button type="button" class="btn primary" id="w-run">Сгенерировать</button>
+      </div>
+    </div>
+  </div>
+  <p class="sr-only" id="w-live" aria-live="polite" aria-atomic="true"></p>
+</section>
+
+<!-- Вкладка 2: галлюцинация по шагам -->
+<section id="panel-halluc" role="tabpanel" aria-labelledby="tab-halluc" hidden>
+  <div class="stage">
+    <div class="col">
+      <div class="msg user">
+        <span class="who">Вы</span>
+        <p class="bubble">Напиши биографию профессора Алексея Веселовского, который изобрёл квантовый опреснитель воды в Тюмени в 2018 году</p>
+      </div>
+      <div class="msg bot" id="h-bot">
+        <span class="who">Модель</span>
+        <p class="bubble" id="h-text"></p>
+      </div>
+      <div class="msg" id="h-bio-wrap" hidden>
+        <span class="who">Модель · готовый ответ</span>
+        <article class="bio appear" aria-label="Сгенерированная биография">
+          <div class="bio-head">
+            <span class="avatar" aria-hidden="true">АВ</span>
+            <span><span class="bio-name">Алексей Веселовский</span><span class="bio-role">профессор · изобретатель квантового опреснителя воды</span></span>
+          </div>
+          <p class="bio-text" id="h-bio-text"></p>
+          <div class="bio-tags" aria-hidden="true"><span>Тюмень</span><span>2018</span><span>опреснение воды</span></div>
+        </article>
+      </div>
+    </div>
+    <div class="panel">
+      <div id="h-stepbox">
+        <div class="panel-head">
+          <span class="row-label" id="h-step-label">Как это работает</span>
+          <span class="dots" id="h-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        </div>
+        <p class="phrase" id="h-phrase">Модель пишет ответ по кусочку и на каждом шаге выбирает самое вероятное продолжение.</p>
+        <p class="cands-empty" id="h-empty">Нажмите «Следующий шаг →» — здесь появятся варианты продолжения и их вероятности</p>
+        <ul class="cands" id="h-cands" hidden></ul>
+        <p class="hint" id="h-hint" hidden></p>
+      </div>
+      <div id="h-reveal" hidden>
+        <div class="plate bad appear">
+          <b><span aria-hidden="true">❌ </span>Реальность</b>
+          Профессора Веселовского, который изобрёл квантовый опреснитель в Тюмени, не существует — как и самого изобретения. Модель не проверяла факты — она на каждом шаге выбирала самое правдоподобное продолжение.
+        </div>
+        <div class="plate ok appear late" style="margin-top:10px">
+          <b><span aria-hidden="true">📌 </span>Правило</b>
+          ИИ даёт не правду, а наиболее вероятное продолжение текста. Модель не проверяет факты в реальном времени, если к ней явно не подключён поиск.
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="h-next">Следующий шаг →</button>
+        <button type="button" class="btn" id="h-reset">↺ Сначала</button>
+      </div>
+    </div>
+  </div>
+  <p class="sr-only" id="h-live" aria-live="polite" aria-atomic="true"></p>
+</section>
+
+<p class="note">Вероятности учебные, придуманы для иллюстрации. Реальная модель на каждом шаге выбирает среди десятков тысяч токенов (слов и их кусочков), а не из трёх-четырёх вариантов.</p>
+
+<script>
+(function () {
+  "use strict";
+
+  var FILL_MS = 900;       // сколько длится заполнение полос
+  var CHOOSE_DELAY = 1050; // пауза перед выбором варианта
+
+  var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  function reducedMotion() { return !!(motionQuery && motionQuery.matches); }
+
+  // Короткий помощник для создания элементов
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = text;
+    return node;
+  }
+
+  // Строит список кандидатов с пустыми полосами, возвращает ссылки на строки
+  function buildCands(listEl, cands) {
+    listEl.textContent = "";
+    var rows = cands.map(function (c) {
+      var li = el("li", "cand" + (c.other ? " other" : ""));
+      var top = el("div", "cand-top");
+      var label = el("span", "cand-label", c.word);
+      var pct = el("span", "cand-pct", "…");
+      top.appendChild(label);
+      top.appendChild(pct);
+      var track = el("div", "track");
+      track.setAttribute("aria-hidden", "true");
+      var fill = el("div", "fill");
+      track.appendChild(fill);
+      li.appendChild(top);
+      li.appendChild(track);
+      listEl.appendChild(li);
+      return { li: li, label: label, pct: pct, fill: fill, p: c.p };
+    });
+    void listEl.offsetWidth; // фиксируем нулевую ширину, чтобы сработал переход
+    return rows;
+  }
+
+  // Заполняет полосы; проценты «набегают», пока жив токен анимации
+  function fillBars(rows, isAlive) {
+    rows.forEach(function (r) { r.fill.style.width = r.p + "%"; });
+    if (reducedMotion()) {
+      rows.forEach(function (r) { r.pct.textContent = r.p + "%"; });
+      return;
+    }
+    var start = null;
+    function frame(now) {
+      if (!isAlive()) return;
+      if (start === null) start = now;
+      var k = Math.min(1, (now - start) / FILL_MS);
+      var eased = 1 - Math.pow(1 - k, 3);
+      rows.forEach(function (r) { r.pct.textContent = Math.round(r.p * eased) + "%"; });
+      if (k < 1) window.requestAnimationFrame(frame);
+    }
+    window.requestAnimationFrame(frame);
+  }
+
+  // Окончательные значения и подсветка выбранного варианта
+  function markChosen(rows, index) {
+    rows.forEach(function (r, i) {
+      r.fill.style.width = r.p + "%";
+      r.pct.textContent = r.p + "%";
+      if (i === index) {
+        r.li.classList.add("chosen");
+        r.label.appendChild(el("span", "tag", "выбрано"));
+      }
+    });
+  }
+
+  /* ---------- Вкладка 1: следующее слово ---------- */
+
+  var WORD_LEAD = "День после вторника —";
+  var WORD_CANDS = [
+    { word: "среда", p: 85 },
+    { word: "четверг", p: 10 },
+    { word: "пятница", p: 3 },
+    { word: "другое", p: 2, other: true }
+  ];
+
+  var wAnswer = document.getElementById("w-answer");
+  var wList = document.getElementById("w-cands");
+  var wRun = document.getElementById("w-run");
+  var wExplain = document.getElementById("w-explain");
+  var wMore = document.getElementById("w-more");
+  var wLive = document.getElementById("w-live");
+
+  var wState = "idle"; // idle — ждём, running — считаем, done — выбрали
+  var wToken = 0;
+  var wTimer = null;
+  var wRows = [];
+
+  function wRenderAnswer(chosen) {
+    wAnswer.textContent = "";
+    wAnswer.appendChild(document.createTextNode(WORD_LEAD + " "));
+    if (chosen) {
+      wAnswer.appendChild(el("mark", "new", WORD_CANDS[0].word));
+      wAnswer.appendChild(document.createTextNode("."));
+    } else {
+      var cursor = el("span", "cursor", "▍");
+      cursor.setAttribute("aria-hidden", "true");
+      wAnswer.appendChild(cursor);
+    }
+  }
+
+  function wReset() {
+    window.clearTimeout(wTimer);
+    wTimer = null;
+    wToken++;
+    wState = "idle";
+    wRows = buildCands(wList, WORD_CANDS);
+    wRenderAnswer(false);
+    wExplain.hidden = true;
+    wMore.hidden = true;
+    wRun.textContent = "Сгенерировать";
+  }
+
+  function wStart() {
+    if (wState === "running") return;
+    if (wState === "done") wReset();
+    wState = "running";
+    var token = ++wToken;
+    wLive.textContent = "Модель оценивает вероятность каждого варианта продолжения…";
+    fillBars(wRows, function () { return token === wToken; });
+    if (reducedMotion()) wChoose();
+    else wTimer = window.setTimeout(wChoose, CHOOSE_DELAY);
+  }
+
+  function wChoose() {
+    if (wState !== "running") return;
+    window.clearTimeout(wTimer);
+    wTimer = null;
+    wToken++;
+    markChosen(wRows, 0);
+    wRenderAnswer(true);
+    wExplain.hidden = false;
+    wMore.hidden = false;
+    wRun.textContent = "↺ Ещё раз";
+    wState = "done";
+    wLive.textContent = "Выбрано самое вероятное продолжение: «среда», 85 процентов. Ответ: день после вторника — среда. " +
+      "Модель выбрала самое вероятное продолжение, а не нашла ответ в базе.";
+  }
+
+  wRun.addEventListener("click", wStart);
+
+  /* ---------- Вкладка 2: галлюцинация по шагам ---------- */
+
+  var STEPS = [
+    {
+      lead: "Алексей Веселовский родился в",
+      cands: [{ word: "Тюмени", p: 46 }, { word: "Москве", p: 31 }, { word: "Томске", p: 14 }],
+      hint: "Тюмень уже есть в запросе — модель подхватывает её как самое правдоподобное продолжение."
+    },
+    {
+      lead: "В 2018 году он возглавил лабораторию в",
+      cands: [{ word: "Тюменском государственном университете", p: 52 }, { word: "частной инженерной компании", p: 27 }, { word: "научном центре в Сколкове", p: 11 }],
+      hint: "Тюмень и 2018 год из запроса делают местный вуз самым «похожим на правду» вариантом."
+    },
+    {
+      lead: "Квантовый опреснитель работает на принципе",
+      cands: [{ word: "микрокапиллярной фильтрации", p: 38 }, { word: "квантового туннелирования", p: 33 }, { word: "обратного осмоса", p: 19 }],
+      hint: "Варианты почти равны: модель не знает ответа, но всё равно выбирает — и пишет уверенным тоном."
+    },
+    {
+      lead: "За изобретение учёный получил",
+      cands: [{ word: "премию за вклад в развитие региона", p: 41 }, { word: "патент и грант на внедрение", p: 35 }, { word: "международную награду", p: 12 }],
+      hint: "Так часто заканчиваются биографии в текстах, на которых училась модель, — поэтому это продолжение самое вероятное."
+    }
+  ];
+  var TOTAL = STEPS.length;
+
+  var hBot = document.getElementById("h-bot");
+  var hText = document.getElementById("h-text");
+  var hBioWrap = document.getElementById("h-bio-wrap");
+  var hBioText = document.getElementById("h-bio-text");
+  var hStepbox = document.getElementById("h-stepbox");
+  var hStepLabel = document.getElementById("h-step-label");
+  var hDots = document.getElementById("h-dots").children;
+  var hPhrase = document.getElementById("h-phrase");
+  var hEmpty = document.getElementById("h-empty");
+  var hList = document.getElementById("h-cands");
+  var hHint = document.getElementById("h-hint");
+  var hReveal = document.getElementById("h-reveal");
+  var hNext = document.getElementById("h-next");
+  var hReset = document.getElementById("h-reset");
+  var hLive = document.getElementById("h-live");
+
+  var hStep = 0;        // 0 — ещё не начали, 1…4 — номер шага
+  var hChosen = false;  // выбран ли вариант на текущем шаге
+  var hFinal = false;   // показан ли итог
+  var hToken = 0;
+  var hTimer = null;
+  var hRows = [];
+
+  function sentence(step) {
+    return step.lead + " " + step.cands[0].word + ".";
+  }
+
+  function hRenderText() {
+    hText.textContent = "";
+    if (hStep === 0) {
+      hText.appendChild(el("span", "placeholder", "Ответ пока пуст"));
+      return;
+    }
+    var before = STEPS.slice(0, hStep - 1).map(sentence).join(" ");
+    if (before) hText.appendChild(document.createTextNode(before + " "));
+    var step = STEPS[hStep - 1];
+    hText.appendChild(document.createTextNode(step.lead + " "));
+    if (hChosen) {
+      hText.appendChild(el("mark", "new", step.cands[0].word));
+      hText.appendChild(document.createTextNode("."));
+    } else {
+      var cursor = el("span", "cursor", "▍");
+      cursor.setAttribute("aria-hidden", "true");
+      hText.appendChild(cursor);
+    }
+  }
+
+  function hRenderDots() {
+    for (var i = 0; i < hDots.length; i++) {
+      var n = i + 1;
+      hDots[i].className = (n < hStep || (n === hStep && hChosen)) ? "done" : (n === hStep ? "now" : "");
+    }
+  }
+
+  function hUpdateNextLabel() {
+    hNext.textContent = (hStep === TOTAL && hChosen) ? "Показать итог →" : "Следующий шаг →";
+  }
+
+  function hChoose() {
+    if (hStep === 0 || hChosen) return;
+    window.clearTimeout(hTimer);
+    hTimer = null;
+    hToken++;
+    var step = STEPS[hStep - 1];
+    markChosen(hRows, 0);
+    hChosen = true;
+    hRenderText();
+    hRenderDots();
+    hHint.textContent = "";
+    hHint.appendChild(el("b", null, "Почему так: "));
+    hHint.appendChild(document.createTextNode(step.hint));
+    hHint.hidden = false;
+    hUpdateNextLabel();
+    hLive.textContent = "Шаг " + hStep + " из " + TOTAL + ": выбрано «" + step.cands[0].word + "», " +
+      step.cands[0].p + " процентов. Текст дописан. " + step.hint;
+  }
+
+  function hShowFinal() {
+    hFinal = true;
+    var hadFocus = document.activeElement === hNext;
+    hBioText.textContent = STEPS.map(sentence).join(" ");
+    hBot.hidden = true;
+    hBioWrap.hidden = false;
+    hStepbox.hidden = true;
+    hReveal.hidden = false;
+    hNext.hidden = true;
+    if (hadFocus) hReset.focus({ preventScroll: true });
+    hLive.textContent = "Итог. Модель написала убедительную биографию: " + hBioText.textContent +
+      " Реальность: профессора Веселовского, который изобрёл квантовый опреснитель в Тюмени, не существует — как и самого изобретения. Модель не проверяла факты — она на каждом шаге выбирала самое правдоподобное продолжение. " +
+      "Правило: ИИ даёт не правду, а наиболее вероятное продолжение текста.";
+  }
+
+  function hAdvance() {
+    if (hFinal) return;
+    // Если полосы ещё заполняются — первый клик просто досрочно завершает шаг
+    if (hStep > 0 && !hChosen) { hChoose(); return; }
+    if (hStep === TOTAL) { hShowFinal(); return; }
+
+    hStep++;
+    hChosen = false;
+    var step = STEPS[hStep - 1];
+    hStepLabel.textContent = "Шаг " + hStep + " из " + TOTAL;
+    hPhrase.textContent = "«" + step.lead + "…»";
+    hEmpty.hidden = true;
+    hList.hidden = false;
+    hHint.hidden = true;
+    hRows = buildCands(hList, step.cands);
+    hRenderText();
+    hRenderDots();
+    hUpdateNextLabel();
+    hLive.textContent = "Шаг " + hStep + " из " + TOTAL + ". Модель подбирает продолжение фразы «" + step.lead + "…»";
+
+    var token = ++hToken;
+    fillBars(hRows, function () { return token === hToken; });
+    if (reducedMotion()) hChoose();
+    else hTimer = window.setTimeout(hChoose, CHOOSE_DELAY);
+  }
+
+  function hResetAll(announce) {
+    window.clearTimeout(hTimer);
+    hTimer = null;
+    hToken++;
+    hStep = 0;
+    hChosen = false;
+    hFinal = false;
+    hRows = [];
+    hList.textContent = "";
+    hList.hidden = true;
+    hEmpty.hidden = false;
+    hHint.hidden = true;
+    hStepLabel.textContent = "Как это работает";
+    hPhrase.textContent = "Модель пишет ответ по кусочку и на каждом шаге выбирает самое вероятное продолжение.";
+    hBot.hidden = false;
+    hBioWrap.hidden = true;
+    hStepbox.hidden = false;
+    hReveal.hidden = true;
+    hNext.hidden = false;
+    hRenderText();
+    hRenderDots();
+    hUpdateNextLabel();
+    if (announce) hLive.textContent = "Начали заново. Ответ пока пуст.";
+  }
+
+  hNext.addEventListener("click", hAdvance);
+  hReset.addEventListener("click", function () { hResetAll(true); });
+
+  /* ---------- Переключение вкладок ---------- */
+
+  var tabs = [document.getElementById("tab-word"), document.getElementById("tab-halluc")];
+  var panels = [document.getElementById("panel-word"), document.getElementById("panel-halluc")];
+
+  function selectTab(index, moveFocus) {
+    // Незаконченная анимация на уходящей вкладке завершается сразу
+    if (wState === "running") wChoose();
+    if (hStep > 0 && !hChosen) hChoose();
+    tabs.forEach(function (tab, i) {
+      var active = i === index;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
+      panels[i].hidden = !active;
+    });
+    if (moveFocus) tabs[index].focus({ preventScroll: true });
+  }
+
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener("click", function () { selectTab(i, false); });
+    tab.addEventListener("keydown", function (e) {
+      var target = null;
+      if (e.key === "ArrowRight" || e.key === "Right") target = (i + 1) % tabs.length;
+      else if (e.key === "ArrowLeft" || e.key === "Left") target = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") target = 0;
+      else if (e.key === "End") target = tabs.length - 1;
+      if (target === null) return;
+      e.preventDefault();
+      selectTab(target, true);
+    });
+  });
+
+  document.getElementById("w-go-halluc").addEventListener("click", function () { selectTab(1, true); });
+
+  wReset();
+  hResetAll(false);
+})();
+</script>
+</body>
+</html>

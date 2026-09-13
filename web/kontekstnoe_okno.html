@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Три состояния контекстного окна</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --violet:#8b5cf6;
+  --green:#10b981;
+  --green-lt:#ecfdf5;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --red-lt:#fef2f2;
+  --text:#0f172a;
+  --muted:#64748b;
+  /* Положение лимита на шкале 0…130: 100 / 130 */
+  --limit-pos:76.923%;
+  --over-zone:23.077%;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin:2px 0 14px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Две части рядом на десктопе, одна колонка на телефоне */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.card{border:1px solid var(--border);border-radius:14px;padding:13px 18px 12px;background:#fff;display:flex;flex-direction:column;min-width:0}
+.row-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px}
+
+/* Кнопки-«таблетки» */
+.btn{
+  padding:8px 15px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.85rem;font-weight:700;line-height:1.4;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.btn.primary{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.btn.primary:hover{background:var(--indigo-dk);border-color:var(--indigo-dk);color:#fff}
+.btn.on{background:var(--indigo-lt);border-color:var(--indigo);color:var(--indigo-dk)}
+.btn:focus-visible,.frag:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.state-row{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin-bottom:8px}
+.steps{display:flex;align-items:center;gap:6px}
+.step{
+  width:32px;height:32px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--muted);transition:all .2s;
+}
+.step.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.dot{color:#cbd5e1;font-weight:900}
+.auto{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:700;color:var(--muted)}
+.auto.on{color:var(--indigo-dk)}
+.auto-bar{width:64px;height:6px;border-radius:100px;background:var(--border);overflow:hidden;visibility:hidden}
+.auto.on .auto-bar{visibility:visible}
+.auto-bar i{display:block;height:100%;width:0;background:var(--indigo);border-radius:100px}
+.auto-bar i.run{animation:fill 3s linear forwards}
+@keyframes fill{from{width:0}to{width:100%}}
+
+/* Составная полоса бюджета */
+.chart{position:relative;margin-bottom:4px}
+.chart-top{position:relative;height:24px}
+.limit-label,.over-label{position:absolute;bottom:4px;font-size:.76rem;font-weight:800;white-space:nowrap;line-height:1.2}
+.limit-label{right:calc(var(--over-zone) + 8px);color:#1e293b}
+.over-label{left:calc(var(--limit-pos) + 8px);color:#b91c1c;opacity:0;transition:opacity .3s}
+.over-label.show{opacity:1}
+.track{position:relative;display:flex;height:54px;border-radius:12px;background:#f1f5f9;overflow:hidden}
+.seg{
+  flex:0 0 auto;height:100%;display:flex;align-items:center;justify-content:center;
+  border-right:2px solid #fff;overflow:hidden;transition:width .7s cubic-bezier(.2,.7,.3,1);
+}
+.seg.ins{background:var(--indigo)}
+.seg.his{background:var(--cyan)}
+.seg.mat{background:var(--violet)}
+.seg.res{background:var(--green);border-right:0}
+.num{position:relative;z-index:2;background:#fff;color:var(--text);font-weight:800;font-size:.84rem;line-height:1.3;border-radius:7px;padding:1px 7px}
+.over{
+  position:absolute;z-index:1;top:0;bottom:0;left:var(--limit-pos);width:0;
+  background:repeating-linear-gradient(-45deg,rgba(220,38,38,.9) 0 5px,rgba(254,226,226,.45) 5px 11px);
+  transition:width .7s cubic-bezier(.2,.7,.3,1);
+}
+.limit-line{
+  position:absolute;z-index:3;left:var(--limit-pos);top:14px;height:66px;width:0;
+  border-left:2px dashed #1e293b;transform:translateX(-1px);pointer-events:none;
+}
+.ticks{position:relative;height:22px}
+.ticks span{position:absolute;top:0;padding-top:5px;transform:translateX(-50%);font-size:.72rem;font-weight:700;color:var(--muted);line-height:1.2}
+.ticks span::before{content:"";position:absolute;top:0;left:50%;width:1px;height:4px;background:#cbd5e1}
+.ticks span:first-child{transform:none}
+.ticks span:first-child::before{left:0}
+.ticks span:last-child{transform:translateX(-100%)}
+.ticks span:last-child::before{left:auto;right:0}
+.ticks .lim{color:#1e293b;font-weight:800}
+
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;list-style:none;margin:4px 0 10px}
+.legend li{display:flex;align-items:center;gap:6px;min-width:0;font-size:.8rem;color:#334155;border:1px solid var(--border);border-radius:10px;padding:5px 8px;line-height:1.25}
+.sw{width:12px;height:12px;border-radius:4px;flex-shrink:0}
+.legend b{margin-left:auto;font-weight:900;color:var(--text)}
+.delta{font-style:normal;font-size:.7rem;font-weight:800;border-radius:6px;padding:0 5px;background:var(--indigo-lt);color:var(--indigo-dk)}
+
+/* Формула и пояснение */
+.formula{
+  font-size:clamp(1.2rem,2.6vw,1.55rem);font-weight:900;letter-spacing:-.3px;text-align:center;
+  line-height:1.25;margin-bottom:8px;font-variant-numeric:tabular-nums;
+}
+.f-ins{color:var(--indigo-dk)}
+.f-his{color:#0369a1}
+.f-mat{color:#6d28d9}
+.f-res{color:#047857}
+.op{color:#94a3b8;font-weight:700}
+.sum{padding:0 8px;border-radius:8px}
+.sum.ok{background:var(--green-lt);color:#047857}
+.sum.bad{background:var(--red-lt);color:#b91c1c}
+.note{border-radius:12px;padding:9px 14px;font-size:.86rem;line-height:1.45;border:1px solid transparent}
+.note b{display:block;font-size:.92rem}
+.note.ok{background:var(--green-lt);border-color:#a7f3d0;color:#065f46}
+.note.bad{background:var(--red-lt);border-color:#fecaca;color:#991b1b}
+.note.warn{background:var(--amber-lt);border-color:#fde68a;color:#92400e}
+.fine{font-size:.74rem;color:var(--muted);line-height:1.4;margin-top:auto;padding-top:8px}
+
+/* Часть 2: сверка резюме */
+.task{font-weight:800;font-size:.9rem;line-height:1.35;margin-bottom:8px}
+.msgs{display:flex;flex-direction:column;gap:6px}
+.msg{border:1px solid var(--border);border-radius:12px;padding:7px 12px;font-size:.86rem;line-height:1.45;background:#fff}
+.msg-label{display:block;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.msg.old{background:#f8fafc;color:#475569}
+.msg.src{background:#f8fafc;border-left:3px solid var(--indigo);border-radius:0 12px 12px 0}
+.msg.sum-box{border:1px dashed #a5b4fc}
+.frag{
+  font-family:inherit;font-size:inherit;font-weight:700;line-height:1.3;color:var(--indigo-dk);
+  background:var(--indigo-lt);border:1px dashed var(--indigo);border-radius:8px;padding:2px 8px;margin:2px 0;
+  cursor:pointer;transition:all .18s;
+}
+.frag:hover{background:#e0e7ff}
+.frag.is-error{background:var(--red-lt);border:1px solid var(--red);color:#991b1b;text-decoration:line-through;text-decoration-thickness:2px}
+.frag.is-match{background:var(--green-lt);border:1px solid var(--green);color:#065f46}
+.feedback{margin-top:8px;min-height:100px}
+.fb-msg{border-radius:12px;padding:7px 12px;font-size:.85rem;font-weight:700;line-height:1.4;border:1px solid var(--border)}
+.fb-msg.hint{background:#f8fafc;color:var(--muted);font-weight:600}
+.fb-msg.ok{background:var(--green-lt);border-color:#a7f3d0;color:#065f46}
+.fb-msg.miss{background:var(--amber-lt);border-color:#fde68a;color:#92400e}
+.fb-fix{margin-top:6px;border-radius:12px;padding:7px 12px;font-size:.85rem;line-height:1.45;background:#fff;border:1px solid #a7f3d0}
+.fb-fix .msg-label{color:#047857}
+.p2-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+@media (max-width:760px){
+  .layout{grid-template-columns:1fr}
+  .feedback{min-height:0}
+}
+@media (max-width:520px){
+  .card{padding:12px 12px}
+  /* На узком экране подписи лимита и превышения — в строку над полосой */
+  .chart-top{display:flex;justify-content:space-between;gap:8px;height:22px}
+  .limit-label,.over-label{position:static;font-size:.72rem}
+  .limit-line{top:22px;height:58px}
+  .formula{font-size:1.15rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  .auto-bar{display:none}
+}
+</style>
+</head>
+<body>
+
+<h1>Три состояния контекстного окна</h1>
+<p class="sub">Контекстное окно — как рабочий стол: перед глазами модели помещается ограниченный объём. Пройдите состояния A → B → C, затем сверьте резюме по смыслу.</p>
+
+<div class="layout">
+
+  <!-- Часть 1: условный бюджет окна -->
+  <section class="card" aria-labelledby="p1-title">
+    <div class="row-label" id="p1-title">1 · Бюджет окна</div>
+
+    <div class="controls">
+      <button type="button" class="btn primary" id="btn-next">Следующее состояние</button>
+      <button type="button" class="btn" id="btn-reset">Сброс</button>
+      <button type="button" class="btn" id="btn-start">Старт</button>
+      <button type="button" class="btn" id="btn-pause">Пауза</button>
+    </div>
+
+    <div class="state-row">
+      <div class="steps" aria-hidden="true">
+        <span class="step active">A</span><span class="dot">·</span>
+        <span class="step">B</span><span class="dot">·</span>
+        <span class="step">C</span>
+      </div>
+      <div class="auto" id="auto">
+        <span class="auto-bar" aria-hidden="true"><i id="auto-fill"></i></span>
+        <span id="auto-text" aria-live="polite">Автопереключение выключено</span>
+      </div>
+    </div>
+
+    <div class="chart">
+      <div class="chart-top">
+        <span class="limit-label">┆ Лимит окна = 100</span>
+        <span class="over-label" id="over-label">Превышение 30</span>
+      </div>
+      <div class="track" id="track" role="img" aria-label="Состояние A: инструкции 10, история 45, материалы 25, резерв ответа 20; сумма 100 при лимите 100">
+        <div class="seg ins" style="width:7.692%"><span class="num">10</span></div>
+        <div class="seg his" style="width:34.615%"><span class="num">45</span></div>
+        <div class="seg mat" style="width:19.231%"><span class="num">25</span></div>
+        <div class="seg res" style="width:15.385%"><span class="num">20</span></div>
+        <div class="over" id="over"></div>
+      </div>
+      <div class="ticks" aria-hidden="true">
+        <span>0</span>
+        <span style="left:19.231%">25</span>
+        <span style="left:38.462%">50</span>
+        <span style="left:57.692%">75</span>
+        <span class="lim" style="left:76.923%">100</span>
+        <span style="left:100%">130</span>
+      </div>
+      <div class="limit-line" aria-hidden="true"></div>
+    </div>
+
+    <ul class="legend" aria-label="Состав бюджета">
+      <li><i class="sw" style="background:var(--indigo)"></i>Инструкции <b>10</b><em class="delta" hidden></em></li>
+      <li><i class="sw" style="background:var(--cyan)"></i>История <b>45</b><em class="delta" hidden></em></li>
+      <li><i class="sw" style="background:var(--violet)"></i>Материалы <b>25</b><em class="delta" hidden></em></li>
+      <li><i class="sw" style="background:var(--green)"></i>Резерв ответа <b>20</b><em class="delta" hidden></em></li>
+    </ul>
+
+    <div id="readout" aria-live="polite">
+      <div class="formula" id="formula"></div>
+      <div class="note ok" id="note"><b id="note-title"></b><span id="note-text"></span></div>
+    </div>
+
+    <p class="fine">Условные единицы учебной схемы — не лимит конкретной модели и не результат проверки сервиса.</p>
+  </section>
+
+  <!-- Часть 2: сверка сокращённого резюме с исходником -->
+  <section class="card" aria-labelledby="p2-title">
+    <div class="row-label" id="p2-title">2 · Сверяем резюме по смыслу</div>
+    <p class="task">Найдите ошибку в резюме — нажмите на неверный фрагмент</p>
+
+    <div class="msgs">
+      <div class="msg old"><span class="msg-label">Старое сообщение</span>«Встреча во вторник в 10:00»</div>
+      <div class="msg src"><span class="msg-label">Актуальный исходник</span>«Учебная встреча перенесена со вторника 10:00 на среду 14:00. Место встречи — кабинет 205. Причина переноса не указана.»</div>
+      <div class="msg sum-box">
+        <span class="msg-label">Резюме (с намеренной ошибкой)</span>
+        <span role="group" aria-label="Фрагменты резюме">«Встреча <button type="button" class="frag" data-error="true">во вторник</button> <button type="button" class="frag">в 14:00</button>, <button type="button" class="frag">кабинет 205</button>»</span>
+      </div>
+    </div>
+
+    <div class="feedback" aria-live="polite">
+      <div class="fb-msg hint" id="fb-msg">Сравните каждый фрагмент резюме с актуальным исходником.</div>
+      <div class="fb-fix" id="fb-fix" hidden><span class="msg-label">Исправленное резюме</span>«Актуально: среда, 14:00, кабинет 205. Вторник 10:00 — отменённое время. Причина переноса неизвестна»</div>
+    </div>
+
+    <div class="p2-actions">
+      <button type="button" class="btn" id="btn-answer">Показать ответ</button>
+      <button type="button" class="btn" id="btn-retry">Попробовать снова</button>
+    </div>
+
+    <p class="fine">Намеренная ошибка учебного текста, а не доказательство того, что реальная модель ошиблась из-за переполнения. Различайте превышение объёма, противоречивые команды и потерю факта при сокращении.</p>
+  </section>
+
+</div>
+
+<script>
+// ===== Часть 1: условный бюджет контекстного окна =====
+const SCALE_MAX = 130; // правый край шкалы
+const LIMIT = 100;     // условный лимит окна
+const AUTO_MS = 3000;  // шаг автопереключения
+
+const PARTS = [
+  {cls: "f-ins", name: "инструкции"},
+  {cls: "f-his", name: "история"},
+  {cls: "f-mat", name: "материалы"},
+  {cls: "f-res", name: "резерв ответа"},
+];
+
+const STATES = [
+  {
+    code: "A", values: [10, 45, 25, 20], tone: "ok",
+    title: "Бюджет заполнен ровно до лимита.",
+    text: "Инструкции, история, материалы и резерв ответа занимают всё окно — свободного места больше нет.",
+  },
+  {
+    code: "B", values: [10, 45, 55, 20], tone: "bad",
+    title: "Добавили материал: превышение 30.",
+    text: "В реальном сервисе это может привести к отказу, сокращению или обрезке истории.",
+  },
+  {
+    code: "C", values: [10, 15, 55, 20], tone: "warn",
+    title: "Историю сократили до резюме: сумма снова 100.",
+    text: "Но меньше — не значит лучше: резюме нужно сверить по смыслу. Попробуйте в части 2.",
+  },
+];
+
+const sumOf = (arr) => arr.reduce((a, b) => a + b, 0);
+const pct = (v) => (v / SCALE_MAX * 100).toFixed(3);
+
+if (typeof document !== "undefined") {
+  const track = document.getElementById("track");
+  const segs = Array.from(track.querySelectorAll(".seg"));
+  const nums = segs.map((s) => s.querySelector(".num"));
+  const legendItems = Array.from(document.querySelectorAll(".legend li"));
+  const overEl = document.getElementById("over");
+  const overLabel = document.getElementById("over-label");
+  const steps = Array.from(document.querySelectorAll(".step"));
+  const formula = document.getElementById("formula");
+  const note = document.getElementById("note");
+  const noteTitle = document.getElementById("note-title");
+  const noteText = document.getElementById("note-text");
+  const autoBox = document.getElementById("auto");
+  const autoText = document.getElementById("auto-text");
+  const autoFill = document.getElementById("auto-fill");
+  const btnStart = document.getElementById("btn-start");
+
+  let current = 0;
+  let timer = null;
+
+  // Прячем число, если сегмент слишком узкий (например, на телефоне)
+  function fitNumbers() {
+    const width = track.clientWidth;
+    STATES[current].values.forEach((v, i) => {
+      nums[i].style.visibility = width * v / SCALE_MAX < 30 ? "hidden" : "visible";
+    });
+  }
+
+  function render() {
+    const st = STATES[current];
+    const prev = current > 0 ? STATES[current - 1] : null;
+    const total = sumOf(st.values);
+    const over = Math.max(0, total - LIMIT);
+
+    st.values.forEach((v, i) => {
+      segs[i].style.width = pct(v) + "%";
+      nums[i].textContent = v;
+      legendItems[i].querySelector("b").textContent = v;
+      const delta = legendItems[i].querySelector(".delta");
+      const d = prev ? v - prev.values[i] : 0;
+      delta.hidden = d === 0;
+      delta.textContent = d > 0 ? "+" + d : "−" + Math.abs(d);
+    });
+    fitNumbers();
+
+    overEl.style.width = pct(over) + "%";
+    overLabel.textContent = "Превышение " + over;
+    overLabel.classList.toggle("show", over > 0);
+
+    const parts = st.values.map((v, i) => `${PARTS[i].name} ${v}`).join(", ");
+    track.setAttribute("aria-label",
+      `Состояние ${st.code}: ${parts}; сумма ${total} при лимите ${LIMIT}` + (over > 0 ? `, превышение ${over}` : ""));
+
+    steps.forEach((s, i) => s.classList.toggle("active", i === current));
+
+    formula.innerHTML =
+      `<span class="sr-only">Состояние ${st.code}: </span>` +
+      st.values.map((v, i) => `<span class="${PARTS[i].cls}">${v}</span>`).join(' <span class="op">+</span> ') +
+      ` <span class="op">=</span> <span class="sum ${over > 0 ? "bad" : "ok"}">${total}</span>`;
+
+    note.className = `note ${st.tone}`;
+    noteTitle.textContent = `${st.code} · ${st.title}`;
+    noteText.textContent = st.text;
+  }
+
+  function restartBar() {
+    autoFill.classList.remove("run");
+    void autoFill.offsetWidth; // перезапуск CSS-анимации полоски
+    autoFill.classList.add("run");
+  }
+
+  function setAuto(on, text) {
+    autoBox.classList.toggle("on", on);
+    btnStart.classList.toggle("on", on);
+    autoText.textContent = text;
+    if (!on) autoFill.classList.remove("run");
+  }
+
+  function tick() {
+    current = (current + 1) % STATES.length;
+    render();
+    restartBar();
+  }
+
+  function startAuto() {
+    if (timer !== null) return;
+    timer = window.setInterval(tick, AUTO_MS);
+    restartBar();
+    setAuto(true, "Автопереключение: каждые 3 с");
+  }
+
+  function stopAuto(text) {
+    if (timer !== null) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+    setAuto(false, text);
+  }
+
+  document.getElementById("btn-next").addEventListener("click", () => {
+    current = (current + 1) % STATES.length;
+    render();
+    if (timer !== null) { // ручной шаг во время автопереключения — отсчёт заново
+      window.clearInterval(timer);
+      timer = window.setInterval(tick, AUTO_MS);
+      restartBar();
+    }
+  });
+  document.getElementById("btn-reset").addEventListener("click", () => {
+    stopAuto("Автопереключение выключено");
+    current = 0;
+    render();
+  });
+  btnStart.addEventListener("click", startAuto);
+  document.getElementById("btn-pause").addEventListener("click", () => {
+    if (timer !== null) stopAuto("Автопереключение на паузе");
+  });
+  window.addEventListener("resize", fitNumbers);
+
+  render();
+
+  // ===== Часть 2: ищем ошибку в резюме =====
+  const frags = Array.from(document.querySelectorAll(".frag"));
+  const fbMsg = document.getElementById("fb-msg");
+  const fbFix = document.getElementById("fb-fix");
+  const HINT = "Сравните каждый фрагмент резюме с актуальным исходником.";
+  let solved = false;
+
+  function setMsg(tone, text) {
+    fbMsg.className = `fb-msg ${tone}`;
+    fbMsg.textContent = text;
+  }
+
+  function markSolved(text) {
+    solved = true;
+    frags.filter((f) => f.dataset.error === "true").forEach((f) => f.classList.add("is-error"));
+    setMsg("ok", text);
+    fbFix.hidden = false;
+  }
+
+  frags.forEach((frag) => {
+    frag.addEventListener("click", () => {
+      if (frag.dataset.error === "true") {
+        markSolved("Верно: ошибка смешала старый день с новым временем.");
+        return;
+      }
+      frag.classList.add("is-match");
+      if (solved) {
+        setMsg("ok", `«${frag.textContent}» совпадает с исходником. Ошибка — только в дне недели.`);
+      } else {
+        setMsg("miss", `«${frag.textContent}»: этот фрагмент совпадает с исходником — ищите дальше.`);
+      }
+    });
+  });
+
+  document.getElementById("btn-answer").addEventListener("click", () => {
+    markSolved("Ответ: неверный фрагмент — «во вторник». Ошибка смешала старый день с новым временем.");
+  });
+
+  document.getElementById("btn-retry").addEventListener("click", () => {
+    solved = false;
+    frags.forEach((f) => f.classList.remove("is-error", "is-match"));
+    fbFix.hidden = true;
+    setMsg("hint", HINT);
+  });
+}
+</script>
+</body>
+</html>

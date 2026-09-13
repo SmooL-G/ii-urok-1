@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Алгоритм выбора нейросети: 3 вопроса</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --green:#10b981;
+  --green-lt:#ecfdf5;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --red-lt:#fef2f2;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin:2px 0 12px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Легенда «автопарка» */
+.fleet{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;list-style:none;margin-bottom:14px}
+.fleet li{border:1px solid var(--border);border-radius:12px;padding:7px 11px;background:#f8fafc;min-width:0;line-height:1.3}
+.fleet b{display:block;font-size:.82rem}
+.fleet span{display:block;font-size:.76rem;color:var(--muted)}
+.fleet em{font-style:normal;font-weight:700;color:var(--indigo-dk)}
+.fleet .em{font-style:normal;margin-right:5px}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+
+/* Вопросы */
+.q{margin-bottom:12px}
+.q-title{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.92rem;line-height:1.3;margin-bottom:7px}
+.q-num{
+  width:22px;height:22px;border-radius:50%;background:var(--indigo-lt);color:var(--indigo-dk);
+  font-size:.78rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;
+}
+.q.done .q-num{background:var(--indigo);color:#fff}
+.choices{display:flex;flex-wrap:wrap;gap:7px}
+.choice-btn{
+  padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.85rem;font-weight:700;line-height:1.35;color:var(--muted);
+  cursor:pointer;transition:all .18s;text-align:left;
+}
+.choice-btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.choice-btn.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.choice-btn:focus-visible,.chip:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+.reset-btn{color:var(--muted)}
+
+/* Карточка результата */
+.result{border:1px solid var(--border);border-radius:14px;padding:14px 18px;background:#f8fafc;min-width:0}
+.res-head{display:flex;align-items:center;gap:12px}
+.light{display:flex;gap:5px;background:#1e293b;border-radius:100px;padding:5px 7px;flex-shrink:0}
+.light i{width:16px;height:16px;border-radius:50%;background:#475569;transition:all .25s}
+.light.red .l-red{background:var(--red);box-shadow:0 0 10px var(--red)}
+.light.green .l-green{background:var(--green);box-shadow:0 0 10px var(--green)}
+.r-title{font-weight:800;font-size:.98rem;line-height:1.3}
+.r-title.red{color:#b91c1c}
+.r-title.green{color:#047857}
+.rule{font-size:.84rem;color:#334155;line-height:1.4;margin-top:7px}
+.sec{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:10px 0 6px;line-height:1.3}
+.sec.sub-sec{text-transform:none;letter-spacing:0;font-size:.78rem;margin:7px 0 5px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:10px;
+  border:1px solid #c7d2fe;background:#fff;color:var(--indigo-dk);font-size:.86rem;font-weight:700;
+  line-height:1.3;text-decoration:none;transition:all .18s;
+}
+a.chip:hover{background:var(--indigo-lt);border-color:var(--indigo)}
+.chip small{display:block;font-size:.7rem;font-weight:700;color:#b45309}
+.chip.local{border-style:dashed;border-color:#94a3b8;color:#1e293b}
+.chip.local small{color:var(--muted)}
+.ext{font-size:.8rem}
+.box{border-radius:12px;padding:8px 13px;font-size:.84rem;line-height:1.45;margin-top:8px}
+.box b{font-weight:800}
+.box.why{background:#fff;border:1px solid var(--border);border-left:3px solid var(--indigo);border-radius:0 12px 12px 0}
+.box.warn{background:var(--amber-lt);border:1px solid #fde68a;color:#78350f}
+.box.warn p+p{margin-top:4px}
+.hint{margin-top:10px;border:1px dashed #cbd5e1;border-radius:12px;padding:12px 14px;background:#fff;text-align:center}
+.hint b{display:block;font-size:.95rem}
+.hint span{font-size:.84rem;color:var(--muted)}
+.res-foot{font-size:.76rem;color:var(--muted);line-height:1.4;margin-top:10px;padding-top:8px;border-top:1px dashed #cbd5e1}
+
+@media (max-width:760px){
+  .fleet{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .layout{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<h1>Алгоритм выбора нейросети: 3 вопроса</h1>
+<p class="sub">Идеальной нейросети «для всего» нет. Выбирайте не по рейтингу, а по данным, объёму и типу задачи — как транспорт в автопарке компании.</p>
+
+<ul class="fleet" aria-label="Аналогия: автопарк компании">
+  <li><b><i class="em" aria-hidden="true">🏎️</i>Спорткар</b><span><em>ChatGPT, Claude</em> — быстро и умно</span></li>
+  <li><b><i class="em" aria-hidden="true">🚛</i>Карьерный самосвал</b><span><em>Gemini</em> — огромный объём за раз</span></li>
+  <li><b><i class="em" aria-hidden="true">🚐</i>Бронированный инкассатор</b><span><em>GigaChat, YandexGPT</em> — отечественные</span></li>
+  <li><b><i class="em" aria-hidden="true">🚜</i>Тягач с открытым кодом</b><span><em>Qwen, DeepSeek</em> — на свой сервер</span></li>
+</ul>
+
+<div class="layout">
+
+  <div class="questions">
+    <div class="q" id="q-data">
+      <div class="q-title" id="q-data-title"><span class="q-num" aria-hidden="true">1</span>Какая категория у моих данных?</div>
+      <div class="choices" role="group" aria-labelledby="q-data-title">
+        <button type="button" class="choice-btn" data-q="data" data-v="closed" aria-pressed="false">🛑 Персональные данные, коммерческая тайна, внутренние регламенты</button>
+        <button type="button" class="choice-btn" data-q="data" data-v="open" aria-pressed="false">🟢 Открытые данные, стандартные шаблоны, публичная информация</button>
+      </div>
+    </div>
+
+    <div class="q" id="q-volume">
+      <div class="q-title" id="q-volume-title"><span class="q-num" aria-hidden="true">2</span>Какой объём нужно обработать за раз?</div>
+      <div class="choices" role="group" aria-labelledby="q-volume-title">
+        <button type="button" class="choice-btn" data-q="volume" data-v="small" aria-pressed="false">Короткий текст, письмо, идея</button>
+        <button type="button" class="choice-btn" data-q="volume" data-v="big" aria-pressed="false">Целая книга, архив файлов за год, часовая видеозапись</button>
+      </div>
+    </div>
+
+    <div class="q" id="q-task">
+      <div class="q-title" id="q-task-title"><span class="q-num" aria-hidden="true">3</span>Что за задача?</div>
+      <div class="choices" role="group" aria-labelledby="q-task-title">
+        <button type="button" class="choice-btn" data-q="task" data-v="logic" aria-pressed="false">Логика, сложные расчёты, алгоритмы, код</button>
+        <button type="button" class="choice-btn" data-q="task" data-v="russian" aria-pressed="false">Работа на русском языке с учётом нашей специфики</button>
+        <button type="button" class="choice-btn" data-q="task" data-v="text" aria-pressed="false">Обычный текст: письмо, резюме, пересказ</button>
+      </div>
+    </div>
+
+    <button type="button" class="choice-btn reset-btn" id="reset">Сбросить ответы</button>
+  </div>
+
+  <section class="result" id="result" aria-live="polite" aria-label="Результат выбора"></section>
+
+</div>
+
+<script>
+// ===== Справочник сервисов: только официальные адреса из урока =====
+const SERVICES = {
+  chatgpt: {name: "ChatGPT", url: "https://chatgpt.com/", note: "РФ официально не поддерживается"},
+  deepseek: {name: "DeepSeek", url: "https://chat.deepseek.com/"},
+  gigachat: {name: "GigaChat", url: "https://giga.chat/"},
+  gemini: {name: "Gemini", url: "https://gemini.google.com/", note: "РФ нет в списке регионов"},
+  yandex: {name: "YandexGPT / Алиса AI", url: "https://alice.yandex.ru/"},
+};
+
+const PERMISSION_WARN =
+  "Даже для российских сервисов нужны разрешение организации и подходящие условия обработки. " +
+  "«Без VPN» не значит «локально» или «в закрытом контуре» — веб-чаты облачные.";
+const CHATGPT_WARN = "ChatGPT: РФ официально не поддерживается, VPN доступ не гарантирует.";
+const FOOT =
+  "Это ориентир из урока, а не рейтинг качества. Проверьте выбранный сервис на несекретном примере: вход, ответ, нужный тип файла.";
+
+// Логика выбора: чистая функция, без обращения к странице
+function recommend(answers) {
+  const {data, volume, task} = answers;
+  const answered = [data, volume, task].filter(Boolean).length;
+  const res = {answered, complete: answered === 3, light: null, title: "", rule: "", chips: [], extra: null, why: "", warn: []};
+
+  if (data === "closed") {
+    res.light = "red";
+    res.title = "🛑 Красный свет: данные закрытые";
+    res.rule = "Только отечественные сервисы (GigaChat, YandexGPT) или локальные модели (Qwen, DeepSeek на сервере компании).";
+  } else if (data === "open") {
+    res.light = "green";
+    res.title = "🟢 Зелёный свет: данные открытые";
+    res.rule = "Подходят и мировые модели — выбор зависит от объёма и типа задачи.";
+  } else {
+    res.title = "Светофор данных: начните с первого вопроса";
+  }
+  if (!res.complete) return res;
+
+  if (data === "closed") {
+    // Приоритетное правило: данные перекрывают объём и задачу
+    if (volume === "big") {
+      res.chips = [{local: true, name: "Локальная модель в контуре компании", note: "Qwen, DeepSeek — с достаточным контекстным окном"}];
+      res.extra = {label: "Если локальной модели нет — по частям, в разрешённом сервисе:", chips: ["gigachat", "yandex"]};
+      res.why = "Категория данных важнее объёма, поэтому Gemini не подходит, несмотря на огромное окно.";
+      res.warn = [
+        "Делите материал на части и делайте промежуточные выжимки, затем сверяйте их с исходником по смыслу.",
+        PERMISSION_WARN,
+      ];
+    } else {
+      res.chips = ["gigachat", "yandex", {local: true, name: "Локальная модель", note: "Qwen, DeepSeek на сервере компании"}];
+      res.why = "Категория данных — приоритетное правило: оно важнее объёма и типа задачи, поэтому третий ответ выбор не меняет. " +
+        "Зарубежные публичные чаты для таких данных не подходят.";
+      res.warn = [PERMISSION_WARN];
+    }
+    return res;
+  }
+
+  if (volume === "big") {
+    res.chips = ["gemini"];
+    res.why = "Карьерный самосвал: огромное контекстное окно — модель видит связи между 1-й и 390-й страницей. " +
+      "Третий ответ выбор здесь не меняет: главное — уместить весь объём.";
+    res.warn = ["РФ нет в официальном списке регионов Gemini, VPN доступ не гарантирует. " +
+      "Если доступа нет — делите документ на части и делайте промежуточные выжимки."];
+    return res;
+  }
+
+  if (task === "logic") {
+    res.chips = ["deepseek", "chatgpt"];
+    res.why = "Для логики, расчётов, алгоритмов и кода урок предлагает DeepSeek и ChatGPT — модели с сильными рассуждениями.";
+    res.warn = [CHATGPT_WARN, "Расчёты перепроверяйте, код запускайте в тестовой среде."];
+  } else if (task === "russian") {
+    res.chips = ["gigachat", "yandex"];
+    res.why = "Отечественные модели ориентированы на русский язык и российские реалии.";
+    res.warn = ["Специфику вашего предприятия модель сама не знает — дайте в запросе термины, примеры и нужный формат."];
+  } else {
+    res.chips = ["chatgpt", "yandex", "gigachat"];
+    res.why = "Для короткого обычного текста подойдёт любой из этих сервисов — выбирайте тот, что доступен и привычен.";
+    res.warn = [CHATGPT_WARN, "В готовом тексте проверяйте факты, даты и имена."];
+  }
+  return res;
+}
+
+function chipHtml(chip) {
+  if (typeof chip === "object" && chip.local) {
+    // Локальные модели — без ссылок: это не веб-чат, а развёртывание в компании
+    return `<span class="chip local"><span aria-hidden="true">🖥️</span><span><b>${chip.name}</b><small>${chip.note}</small></span></span>`;
+  }
+  const s = SERVICES[chip];
+  const note = s.note ? `<small>${s.note}</small>` : "";
+  return `<a class="chip" href="${s.url}" target="_blank" rel="noopener"><span><b>${s.name}</b>${note}</span>` +
+    `<span class="ext" aria-hidden="true">↗</span><span class="sr-only"> (откроется в новой вкладке)</span></a>`;
+}
+
+function resultHtml(res) {
+  let html =
+    `<div class="res-head">` +
+      `<div class="light ${res.light || ""}" aria-hidden="true"><i class="l-red"></i><i></i><i class="l-green"></i></div>` +
+      `<div class="r-title ${res.light || ""}">${res.title}</div>` +
+    `</div>`;
+  if (res.rule) html += `<p class="rule">${res.rule}</p>`;
+
+  if (!res.complete) {
+    html += `<div class="hint"><b>Ответьте на все три вопроса</b><span>Отвечено: ${res.answered} из 3. Рекомендация появится сразу после последнего ответа.</span></div>`;
+  } else {
+    html += `<div class="sec">Рекомендуем</div><div class="chips">${res.chips.map(chipHtml).join("")}</div>`;
+    if (res.extra) {
+      html += `<div class="sec sub-sec">${res.extra.label}</div><div class="chips">${res.extra.chips.map(chipHtml).join("")}</div>`;
+    }
+    html += `<div class="box why"><b>Почему.</b> ${res.why}</div>`;
+    html += `<div class="box warn">${res.warn.map((w, i) => `<p>${i === 0 ? "<b>Обратите внимание.</b> " : ""}${w}</p>`).join("")}</div>`;
+  }
+  html += `<p class="res-foot">${FOOT}</p>`;
+  return html;
+}
+
+if (typeof document !== "undefined") {
+  const answers = {data: null, volume: null, task: null};
+  const resultEl = document.getElementById("result");
+  const buttons = Array.from(document.querySelectorAll(".choice-btn[data-q]"));
+
+  function update() {
+    buttons.forEach((b) => {
+      const on = answers[b.dataset.q] === b.dataset.v;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    ["data", "volume", "task"].forEach((q) => {
+      document.getElementById(`q-${q}`).classList.toggle("done", Boolean(answers[q]));
+    });
+    resultEl.innerHTML = resultHtml(recommend(answers));
+  }
+
+  buttons.forEach((b) => {
+    b.addEventListener("click", () => {
+      answers[b.dataset.q] = b.dataset.v;
+      update();
+    });
+  });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    answers.data = null;
+    answers.volume = null;
+    answers.task = null;
+    update();
+  });
+
+  update();
+}
+</script>
+</body>
+</html>

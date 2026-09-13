@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Лента истории ИИ: 1950 → 2022</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --cyan:#0ea5e9;
+  --cyan-lt:#f0f9ff;
+  --green:#10b981;
+  --green-lt:#ecfdf5;
+  --amber:#f59e0b;
+  --amber-lt:#fffbeb;
+  --red:#ef4444;
+  --red-lt:#fef2f2;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#fff;color:var(--text);line-height:1.5;padding:20px 22px 24px;
+}
+h1{font-size:clamp(1.05rem,2.4vw,1.35rem);font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:.88rem;margin:2px 0 12px}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Ряд чипов с годами: на узком экране прокручивается по горизонтали */
+.years{
+  position:relative;display:flex;gap:6px;overflow-x:auto;
+  padding:3px 3px 7px;margin:0 -3px 6px;scrollbar-width:thin;
+}
+.chip{
+  flex:0 0 auto;padding:7px 13px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.86rem;font-weight:700;color:var(--muted);cursor:pointer;
+  white-space:nowrap;transition:all .18s;
+}
+.chip:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.chip.past{background:var(--indigo-lt);border-color:#e0e7ff;color:var(--indigo-dk)}
+.chip.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.chip:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+
+/* Карточка вехи */
+.card{position:relative;border:1px solid var(--border);border-radius:14px;padding:14px 16px 16px;background:#fff;overflow:hidden}
+.card-head{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;margin-bottom:12px}
+.card-head h2{font-size:1.1rem;font-weight:800;letter-spacing:-.2px;line-height:1.3}
+.card-year{color:var(--indigo);font-weight:900}
+.stage{
+  font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  padding:3px 10px;border-radius:100px;white-space:nowrap;
+}
+.stage.idea{background:var(--indigo-lt);color:var(--indigo-dk)}
+.stage.breakthrough{background:var(--cyan-lt);color:#0369a1;box-shadow:0 0 0 1px #bae6fd inset}
+.stage.decline{background:#f1f5f9;color:#475569;box-shadow:0 0 0 1px #cbd5e1 inset}
+.stage.revival{background:var(--green-lt);color:#047857}
+.stage.victory{background:var(--amber-lt);color:#b45309;box-shadow:0 0 0 1px #fde68a inset}
+.stage.mass{background:var(--indigo);color:#fff}
+
+.card-body{display:grid;grid-template-columns:55% minmax(0,1fr);gap:16px;align-items:start}
+.card-body.swap{animation:swapIn .32s ease}
+@keyframes swapIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Картинка-слайд: фиксированная пропорция 16:9, чтобы карточка не прыгала */
+.pic{
+  position:relative;display:block;aspect-ratio:16/9;max-width:100%;border-radius:12px;overflow:hidden;
+  background:#f1f5f9;border:1px solid var(--border);color:inherit;text-decoration:none;
+}
+.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pic:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+.zoom{
+  position:absolute;right:8px;bottom:8px;padding:3px 9px;border-radius:8px;
+  background:rgba(15,23,42,.72);color:#fff;font-size:.74rem;font-weight:700;pointer-events:none;
+}
+.pic-fallback{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:16px;text-align:center;background:linear-gradient(135deg,var(--indigo-lt),var(--cyan-lt));
+}
+.pic-fallback b{font-size:1.7rem;font-weight:900;color:var(--indigo);line-height:1.1}
+.pic-fallback span{font-size:.95rem;font-weight:700;color:#334155}
+
+.facts{display:flex;flex-direction:column;gap:8px}
+.fact{border:1px solid var(--border);border-radius:10px;padding:8px 13px 9px;font-size:.88rem;line-height:1.45}
+.fact h3{font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:2px}
+.fact.core{border-left:3px solid var(--indigo)}
+.fact.simple{background:#f8fafc}
+.fact.fun{background:var(--amber-lt);border-color:#fde68a}
+.fact.fun h3{color:#b45309}
+
+/* Полоска автопоказа внизу карточки */
+.autobar{position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--indigo),var(--cyan));transform-origin:left center;transform:scaleX(0)}
+.card:not(.auto) .autobar{display:none}
+.autobar.run{animation:autofill 7s linear forwards}
+@keyframes autofill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Навигация */
+.nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.nav-btn{
+  padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;
+  font-family:inherit;font-size:.88rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.nav-btn:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+.nav-btn.primary{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.nav-btn.primary:hover{background:var(--indigo-dk);border-color:var(--indigo-dk);color:#fff}
+.nav-btn[aria-disabled="true"]{opacity:.45;cursor:default}
+.nav-btn[aria-disabled="true"]:hover{border-color:var(--border);color:var(--muted)}
+.nav-btn.primary[aria-disabled="true"]:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.nav-btn:focus-visible{outline:2px solid var(--indigo-dk);outline-offset:2px}
+.counter{min-width:64px;text-align:center;font-weight:800;font-size:.92rem;color:var(--text);font-variant-numeric:tabular-nums}
+.auto-btn{margin-left:auto}
+.auto-btn.on{background:var(--indigo-lt);border-color:#c7d2fe;color:var(--indigo-dk)}
+
+.note{margin-top:10px;font-size:.76rem;color:var(--muted)}
+
+@media (max-width:760px){
+  body{padding:16px 16px 20px}
+  .card{padding:12px 12px 14px}
+  .card-body{grid-template-columns:1fr;gap:12px}
+  .nav-btn.step{flex:1}
+  .auto-btn{margin-left:0;flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .auto-btn{display:none}
+}
+</style>
+</head>
+<body>
+
+<h1>Лента истории ИИ: 1950 → 2022</h1>
+<p class="sub">11 вех — от вопроса «Может ли машина мыслить?» до ChatGPT. Нажимайте на годы или стрелки ← →; слайд открывается крупно по клику.</p>
+
+<div class="years" id="years" role="tablist" aria-label="Вехи истории искусственного интеллекта"></div>
+
+<section class="card" id="card" role="tabpanel" aria-labelledby="card-title">
+  <div class="card-head">
+    <h2 id="card-title"><span class="card-year" id="card-year"></span> <span id="card-name"></span></h2>
+    <span class="stage" id="card-stage"></span>
+  </div>
+  <div class="card-body" id="card-body">
+    <a class="pic" id="pic" href="#" target="_blank" rel="noopener" title="Открыть крупно"></a>
+    <div class="facts">
+      <div class="fact core"><h3><span aria-hidden="true">📌 </span>Суть</h3><p id="fact-core"></p></div>
+      <div class="fact simple"><h3><span aria-hidden="true">💡 </span>Простыми словами</h3><p id="fact-simple"></p></div>
+      <div class="fact fun"><h3><span aria-hidden="true">🔥 </span>Интересный факт</h3><p id="fact-fun"></p></div>
+    </div>
+  </div>
+  <div class="autobar" id="autobar" aria-hidden="true"></div>
+</section>
+
+<div class="nav">
+  <button type="button" class="nav-btn step" id="prev">← Назад</button>
+  <span class="counter" id="counter" aria-hidden="true">1 / 11</span>
+  <button type="button" class="nav-btn step primary" id="next">Далее →</button>
+  <button type="button" class="nav-btn auto-btn" id="auto">▶ Автопоказ</button>
+</div>
+
+<p class="sr-only" id="live" aria-live="polite" aria-atomic="true"></p>
+
+<p class="note">Картинки — слайды урока. Даты и формулировки сверены с открытыми источниками.</p>
+
+<script>
+(function () {
+  "use strict";
+
+  // Папка со слайдами урока (путь относительно web/)
+  var IMG_DIR = "../png/kak_ustroen_ii/";
+  // Шаг автопоказа, мс
+  var AUTOPLAY_MS = 7000;
+  var NB = String.fromCharCode(160); // неразрывный пробел
+
+  // Подписи этапов для бейджа
+  var STAGES = {
+    idea: "Идея",
+    breakthrough: "Прорыв",
+    decline: "Спад",
+    revival: "Возрождение",
+    victory: "Символическая победа",
+    mass: "Массовый доступ"
+  };
+
+  // Вехи: год, заголовок, этап, слайд, альтернативный текст и три блока текста
+  var ITEMS = [
+    {
+      year: "1950",
+      title: "Тест Тьюринга: рождение концепции",
+      stage: "idea",
+      img: "03_test_tyuringa.jpg",
+      alt: "Слайд «Тест Тьюринга»: судья переписывается через текст с человеком и с машиной и пытается понять, кто есть кто",
+      core: "Алан Тьюринг в статье «Вычислительные машины и разум» задал вопрос «Может ли машина мыслить?» и, чтобы обойти философские споры о природе разума, предложил практический тест.",
+      simple: "Человек переписывается в текстовом чате с другим человеком и с машиной. Если он не может надёжно понять, кто есть кто, — машина прошла тест.",
+      fun: "Сам Тьюринг назвал тест «Игрой в имитацию» (Imitation Game) и предсказал, что примерно к 2000 году машины с памятью около 10⁹ бит (≈" + NB + "120" + NB + "МБ) смогут вводить собеседника в заблуждение в 30% случаев после пяти минут разговора."
+    },
+    {
+      year: "1956",
+      title: "Дартмутский семинар: ИИ получает имя",
+      stage: "idea",
+      img: "04_dartmut_1956.jpg",
+      alt: "Слайд «Рождение искусственного интеллекта»: учёные 1950-х у доски с надписью Artificial Intelligence, Дартмутский колледж, 1956 год",
+      core: "Официальная точка отсчёта ИИ как науки. Джон Маккарти, Марвин Минский, Клод Шеннон и Натаниэль Рочестер собрали исследователей на двухмесячный летний семинар в Дартмутском колледже.",
+      simple: "Термин Artificial Intelligence — «искусственный интеллект» — придумал Джон Маккарти, чтобы объединить исследователей разных направлений под одной крышей.",
+      fun: "Авторы заявки на грант были настроены очень оптимистично: считали, что группа из 10 человек за одно лето добьётся существенного продвижения в создании «мыслящих машин». Спойлер: путь занял десятилетия."
+    },
+    {
+      year: "1957",
+      title: "Перцептрон Розенблатта: первая обучаемая нейросеть",
+      stage: "breakthrough",
+      img: "05_perceptron_1957.jpg",
+      alt: "Слайд «От перфокарт к машинному зрению»: ламповая вычислительная машина с оптическим сенсором распознаёт треугольник на карточке",
+      core: "Фрэнк Розенблатт описал перцептрон, а затем построил аппарат «Марк-1» размером с комнату — он имитировал работу нейронных связей глаза и мозга.",
+      simple: "Система не выполняла жёстко заданный код, а обучалась распознавать простые фигуры на карточках.",
+      fun: "В 1958 году The New York Times писала, что от «зародыша компьютера» ждут способности ходить, говорить, видеть, писать и осознавать своё существование. С этого начался первый хайп вокруг ИИ."
+    },
+    {
+      year: "1966",
+      title: "ELIZA: первый чат-бот",
+      stage: "breakthrough",
+      img: "06_eliza_1966.jpg",
+      alt: "Слайд «ELIZA (1966)»: экран старого терминала с перепиской пациента и программы ELIZA",
+      core: "Джозеф Вейценбаум из MIT создал программу ELIZA, которая пародировала беседу с психотерапевтом школы Карла Роджерса.",
+      simple: "ELIZA не понимала смысл. Она цеплялась за ключевые слова и переформулировала их в вопрос: «Мне грустно» → «Почему вам грустно?»",
+      fun: "Эффект Элизы: люди знали, что говорят с простой программой, но всё равно делились с ней личным. Секретарь Вейценбаума однажды попросила его выйти из комнаты, чтобы поговорить с ELIZA наедине."
+    },
+    {
+      year: "1974–1980",
+      title: "Первая «зима ИИ»",
+      stage: "decline",
+      img: "07_zima_ii.jpg",
+      alt: "Слайд «AI-зима»: старый компьютер вмёрз в глыбу льда, на экране — надпись Artificial Intelligence… please wait",
+      core: "Период разочарования: правительства и инвесторы урезали финансирование, скепсис вырос.",
+      simple: "Ожидания были завышены, а компьютеры 1970-х — медленными, с крошечной памятью. Они не справлялись с реальными задачами: например, машинный перевод не оправдал надежд.",
+      fun: "Термин «зима ИИ» — по аналогии с «ядерной зимой» — прозвучал в 1984 году на конференции AAAI: учёные предупреждали, что новый необоснованный хайп снова обернётся обвалом."
+    },
+    {
+      year: "1980-е",
+      title: "Экспертные системы и обратное распространение ошибки",
+      stage: "revival",
+      img: "08_backpropagation_1980.jpg",
+      alt: "Слайд «Обратное распространение ошибки»: схема нейросети — сигнал идёт вперёд, ошибка возвращается назад по слоям и корректирует веса",
+      core: "Возрождение ИИ. Во-первых, коммерческий успех экспертных систем — программ-справочников для врачей и инженеров. Во-вторых, научный прорыв: популяризация алгоритма обратного распространения ошибки (backpropagation) — Румельхарт, Хинтон и Уильямс, 1986.",
+      simple: "Backpropagation — способ, которым нейросеть учится на ошибках. Она делает предсказание, сравнивает его с правильным ответом и «прокатывает» ошибку назад по слоям, подкручивая веса.",
+      fun: "Экспертные системы стоили миллионы долларов: инженеры вручную записывали со слов специалистов тысячи правил вида «если А, то Б»."
+    },
+    {
+      year: "1997",
+      title: "Deep Blue против Каспарова",
+      stage: "victory",
+      img: "09_deep_blue_1997.jpg",
+      alt: "Слайд «Deep Blue vs Каспаров»: Гарри Каспаров за шахматной доской рядом со шкафами суперкомпьютера IBM Deep Blue",
+      core: "Суперкомпьютер IBM Deep Blue выиграл у чемпиона мира Гарри Каспарова матч из шести партий со счётом 3,5" + NB + ":" + NB + "2,5.",
+      simple: "Это не нейросеть в современном смысле, а гигантская вычислительная машина: она оценивала до 200" + NB + "миллионов позиций в секунду.",
+      fun: "После поражения Каспаров заподозрил, что в отдельных партиях машине помогал человек-гроссмейстер. IBM это отрицала, от реванша отказалась, а Deep Blue вскоре разобрали."
+    },
+    {
+      year: "2012",
+      title: "AlexNet: революция глубокого обучения",
+      stage: "breakthrough",
+      img: "10_alexnet_2012.jpg",
+      alt: "Слайд «Как нейросеть видит мир»: множество фотографий проходит через слои нейросети на видеокарте, на выходе — «кошка, 96%»",
+      core: "Алекс Крижевский и Илья Суцкевер под руководством Джеффри Хинтона создали нейросеть AlexNet и с огромным отрывом выиграли конкурс распознавания изображений ImageNet.",
+      simple: "Нейросетям не хватало двух вещей — больших данных (интернет дал миллионы размеченных картинок) и вычислительной мощности. Авторы обучили сеть на видеокартах (GPU), а не на обычных процессорах (CPU).",
+      fun: "С 2012 года начался бум глубокого обучения, а Хинтона стали называть «крёстным отцом ИИ». В 2024 году он получил Нобелевскую премию по физике."
+    },
+    {
+      year: "2016",
+      title: "AlphaGo: преодоление невозможного",
+      stage: "breakthrough",
+      img: "11_alphago_2016.jpg",
+      alt: "Слайд «AlphaGo и игра го»: роботизированная рука ставит светящийся камень на доску для игры го",
+      core: "Программа AlphaGo от DeepMind (Google) выиграла у Ли Седоля — одного из сильнейших игроков в го — со счётом 4" + NB + ":" + NB + "1.",
+      simple: "В го нельзя победить перебором, как в шахматах: возможных позиций больше, чем атомов во Вселенной. Программа выработала «интуицию» с помощью глубокого обучения и обучения с подкреплением (reinforcement learning).",
+      fun: "Во второй партии AlphaGo сделала 37-й ход, который комментаторы сначала сочли ошибкой. Позже его признали блестящим — он изменил взгляд профессионалов на игру."
+    },
+    {
+      year: "2017",
+      title: "Transformer: фундамент для LLM",
+      stage: "breakthrough",
+      img: "12_gpt_transformer_2017.jpg",
+      alt: "Слайд «GPT: Generative Pre-trained Transformer»: три шага — текст разбивается на токены, механизм внимания связывает слова, модель генерирует ответ",
+      core: "Исследователи Google опубликовали статью «Attention Is All You Need» и представили архитектуру трансформера — основу современных языковых моделей.",
+      simple: "Раньше модели читали текст слово за словом и забывали начало длинной фразы. Механизм внимания (attention) позволил видеть весь текст сразу и связывать слова независимо от расстояния между ними.",
+      fun: "Все восемь авторов статьи со временем ушли из Google; многие основали собственные компании — Cohere, Character.ai, Essential AI и другие. Один из них, Ноам Шазир, в 2024 году вернулся в Google."
+    },
+    {
+      year: "2022",
+      title: "ChatGPT и генеративный бум",
+      stage: "mass",
+      img: "16_chatgpt_2022.jpg",
+      alt: "Слайд «ИИ создаёт больше возможностей»: робот работает за ноутбуком, вокруг — тексты, код, изображения, музыка и аналитика",
+      core: "OpenAI открыла бесплатный публичный интерфейс ChatGPT на базе модели GPT-3.5.",
+      simple: "ИИ перестал быть инструментом только учёных и программистов. Генеративная модель пишет тексты и код, объясняет, переводит и поддерживает диалог с любым человеком.",
+      fun: "По оценке аналитиков UBS, ChatGPT набрал 100" + NB + "миллионов активных пользователей примерно за 2" + NB + "месяца — рекорд для потребительского интернет-сервиса (TikTok понадобилось около 9" + NB + "месяцев, Instagram — около 2,5" + NB + "лет)."
+    }
+  ];
+
+  var LAST = ITEMS.length - 1;
+
+  var yearsEl = document.getElementById("years");
+  var card = document.getElementById("card");
+  var cardBody = document.getElementById("card-body");
+  var yearEl = document.getElementById("card-year");
+  var nameEl = document.getElementById("card-name");
+  var stageEl = document.getElementById("card-stage");
+  var pic = document.getElementById("pic");
+  var coreEl = document.getElementById("fact-core");
+  var simpleEl = document.getElementById("fact-simple");
+  var funEl = document.getElementById("fact-fun");
+  var counterEl = document.getElementById("counter");
+  var prevBtn = document.getElementById("prev");
+  var nextBtn = document.getElementById("next");
+  var autoBtn = document.getElementById("auto");
+  var autobar = document.getElementById("autobar");
+  var live = document.getElementById("live");
+
+  var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  function reducedMotion() { return !!(motionQuery && motionQuery.matches); }
+
+  var current = 0;
+  var autoOn = false;
+  var autoTimer = null;
+
+  // Чипы с годами
+  var chips = ITEMS.map(function (item, i) {
+    var chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.id = "chip-" + i;
+    chip.setAttribute("role", "tab");
+    chip.setAttribute("aria-controls", "card");
+    chip.setAttribute("title", item.title);
+    chip.textContent = item.year;
+    chip.addEventListener("click", function () { goTo(i); });
+    yearsEl.appendChild(chip);
+    return chip;
+  });
+
+  // Прокрутить ленту чипов так, чтобы активный был виден.
+  // scrollIntoView не используем: внутри iframe он дёргает прокрутку всей страницы урока.
+  function revealChip(chip) {
+    if (yearsEl.scrollWidth <= yearsEl.clientWidth) return;
+    var left = chip.offsetLeft - (yearsEl.clientWidth - chip.offsetWidth) / 2;
+    left = Math.max(0, left);
+    if (typeof yearsEl.scrollTo === "function") {
+      yearsEl.scrollTo({ left: left, behavior: reducedMotion() ? "auto" : "smooth" });
+    } else {
+      yearsEl.scrollLeft = left;
+    }
+  }
+
+  // Слайд: при ошибке загрузки — светлая заглушка с названием вехи
+  function renderPicture(item) {
+    pic.textContent = "";
+    pic.href = IMG_DIR + item.img;
+    pic.title = "Открыть крупно";
+
+    var img = document.createElement("img");
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.width = 1672;
+    img.height = 941;
+    img.alt = item.alt;
+    img.addEventListener("error", function () {
+      if (!img.parentNode) return;
+      img.parentNode.removeChild(img);
+      var zoom = pic.querySelector(".zoom");
+      if (zoom) pic.removeChild(zoom);
+      pic.removeAttribute("href");
+      pic.removeAttribute("title");
+      var fallback = document.createElement("span");
+      fallback.className = "pic-fallback";
+      fallback.setAttribute("role", "img");
+      fallback.setAttribute("aria-label", item.year + " — " + item.title);
+      var y = document.createElement("b");
+      y.textContent = item.year;
+      var t = document.createElement("span");
+      t.textContent = item.title;
+      fallback.appendChild(y);
+      fallback.appendChild(t);
+      pic.appendChild(fallback);
+    });
+    img.src = IMG_DIR + item.img;
+
+    var zoom = document.createElement("span");
+    zoom.className = "zoom";
+    zoom.setAttribute("aria-hidden", "true");
+    zoom.textContent = "🔍 Крупно";
+
+    pic.appendChild(img);
+    pic.appendChild(zoom);
+  }
+
+  function restartAnimation(node, cls) {
+    node.classList.remove(cls);
+    void node.offsetWidth; // перезапуск CSS-анимации
+    node.classList.add(cls);
+  }
+
+  function render(announce) {
+    var item = ITEMS[current];
+
+    chips.forEach(function (chip, i) {
+      var active = i === current;
+      chip.classList.toggle("active", active);
+      chip.classList.toggle("past", i < current);
+      chip.setAttribute("aria-selected", active ? "true" : "false");
+      chip.tabIndex = active ? 0 : -1;
+    });
+
+    yearEl.textContent = item.year;
+    nameEl.textContent = item.title;
+    stageEl.textContent = STAGES[item.stage];
+    stageEl.className = "stage " + item.stage;
+    coreEl.textContent = item.core;
+    simpleEl.textContent = item.simple;
+    funEl.textContent = item.fun;
+    renderPicture(item);
+
+    counterEl.textContent = (current + 1) + " / " + ITEMS.length;
+    prevBtn.setAttribute("aria-disabled", current === 0 ? "true" : "false");
+    nextBtn.setAttribute("aria-disabled", current === LAST ? "true" : "false");
+
+    revealChip(chips[current]);
+
+    if (announce) {
+      live.textContent = "Веха " + (current + 1) + " из " + ITEMS.length + ": " + item.year + " — " +
+        item.title + ". Этап: " + STAGES[item.stage] + ".";
+      if (!reducedMotion()) restartAnimation(cardBody, "swap");
+    }
+  }
+
+  function goTo(index) {
+    if (index < 0 || index > LAST || index === current) return;
+    current = index;
+    render(true);
+    if (autoOn) scheduleAuto(); // ручное листание перезапускает отсчёт автопоказа
+  }
+
+  // Автопоказ
+  function scheduleAuto() {
+    window.clearTimeout(autoTimer);
+    autobar.style.animationDuration = AUTOPLAY_MS + "ms";
+    restartAnimation(autobar, "run");
+    autoTimer = window.setTimeout(function () {
+      current = current === LAST ? 0 : current + 1; // после последней вехи — снова с начала
+      render(true);
+      scheduleAuto();
+    }, AUTOPLAY_MS);
+  }
+
+  function setAuto(on) {
+    autoOn = !!on && !reducedMotion();
+    autoBtn.textContent = autoOn ? "⏸ Пауза" : "▶ Автопоказ";
+    autoBtn.classList.toggle("on", autoOn);
+    card.classList.toggle("auto", autoOn);
+    if (autoOn) {
+      scheduleAuto();
+    } else {
+      window.clearTimeout(autoTimer);
+      autoTimer = null;
+      autobar.classList.remove("run");
+    }
+  }
+
+  prevBtn.addEventListener("click", function () { goTo(current - 1); });
+  nextBtn.addEventListener("click", function () { goTo(current + 1); });
+  autoBtn.addEventListener("click", function () {
+    setAuto(!autoOn);
+    live.textContent = autoOn ? "Автопоказ включён: новая веха каждые 7 секунд." : "Автопоказ на паузе.";
+  });
+
+  // Стрелки ←/→ листают вехи; Home/End — к первой и последней, если фокус на чипах
+  document.addEventListener("keydown", function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    var onChip = !!(e.target && e.target.classList && e.target.classList.contains("chip"));
+    var target;
+    if (e.key === "ArrowLeft" || e.key === "Left") target = current - 1;
+    else if (e.key === "ArrowRight" || e.key === "Right") target = current + 1;
+    else if (onChip && e.key === "Home") target = 0;
+    else if (onChip && e.key === "End") target = LAST;
+    else return;
+    e.preventDefault();
+    goTo(target);
+    if (onChip) chips[current].focus({ preventScroll: true });
+  });
+
+  // Когда вкладка скрыта, автопоказ не тикает впустую
+  document.addEventListener("visibilitychange", function () {
+    if (!autoOn) return;
+    if (document.hidden) {
+      window.clearTimeout(autoTimer);
+      autobar.classList.remove("run");
+    } else {
+      scheduleAuto();
+    }
+  });
+
+  // prefers-reduced-motion: кнопка автопоказа скрыта, автопоказ выключен
+  function applyMotionPreference() {
+    autoBtn.hidden = reducedMotion();
+    if (reducedMotion() && autoOn) setAuto(false);
+  }
+  if (motionQuery) {
+    if (typeof motionQuery.addEventListener === "function") motionQuery.addEventListener("change", applyMotionPreference);
+    else if (typeof motionQuery.addListener === "function") motionQuery.addListener(applyMotionPreference);
+  }
+
+  applyMotionPreference();
+  render(false);
+})();
+</script>
+</body>
+</html>

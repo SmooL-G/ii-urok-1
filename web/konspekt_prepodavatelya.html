@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Опорный конспект преподавателя — Урок 1 «Как устроен современный ИИ»</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📋%3C/text%3E%3C/svg%3E">
+<!--
+  Опорный конспект для преподавателя: простая страница без анимаций,
+  удобная для второго экрана и печати на A4.
+-->
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --border:#e2e8f0;
+  --indigo:#6366f1;
+  --indigo-dk:#4338ca;
+  --indigo-lt:#eef2ff;
+  --amber-lt:#fffbeb;
+  --amber-bd:#fcd34d;
+  --amber-tx:#78350f;
+  --green-lt:#f0fdf4;
+  --green-tx:#166534;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+html{background:var(--bg)}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.wrap{max-width:920px;margin:0 auto;padding:32px 20px 56px}
+a{color:var(--indigo-dk)}
+a:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+
+header.top{margin-bottom:26px}
+.kicker{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+h1{font-size:clamp(1.5rem,4vw,2.1rem);font-weight:900;line-height:1.2;letter-spacing:-.5px;margin:6px 0 10px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.meta span{padding:3px 12px;border-radius:100px;background:var(--indigo-lt);border:1px solid #c7d2fe;color:var(--indigo-dk);font-size:.8rem;font-weight:700}
+.top-links{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.9rem;font-weight:600}
+
+h2{font-size:1.25rem;font-weight:800;margin:34px 0 12px;letter-spacing:-.2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px}
+.main-idea{border-left:4px solid var(--indigo);border-radius:0 14px 14px 0;font-weight:700;font-size:1.05rem}
+.goal{margin-top:12px}
+.goal p+p{margin-top:6px}
+
+ul.list,ol.list{padding-left:22px;display:flex;flex-direction:column;gap:5px}
+ul.list li::marker{color:var(--indigo)}
+ul.checks{list-style:none;display:flex;flex-direction:column;gap:7px}
+ul.checks li{padding-left:28px;position:relative}
+ul.checks li::before{content:"☐";position:absolute;left:0;top:-1px;font-size:1.1rem;color:var(--indigo)}
+
+.toc{display:flex;flex-wrap:wrap;gap:6px}
+.toc a{padding:4px 10px;border-radius:8px;background:#fff;border:1px solid var(--border);font-size:.82rem;font-weight:600;text-decoration:none;color:var(--text)}
+.toc a:hover{border-color:#c7d2fe;color:var(--indigo-dk)}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:14px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:620px}
+th{text-align:left;background:var(--indigo-lt);color:var(--indigo-dk);padding:9px 12px;font-weight:700}
+td{padding:9px 12px;border-top:1px solid var(--border);vertical-align:top}
+td:first-child{white-space:nowrap;font-weight:800;color:var(--indigo-dk)}
+
+.block{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:14px}
+.block-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin-bottom:10px}
+.time{display:inline-block;padding:2px 10px;border-radius:8px;background:var(--indigo);color:#fff;font-weight:800;font-size:.85rem;white-space:nowrap}
+.block h3{font-size:1.08rem;font-weight:800;flex:1;min-width:220px}
+.block-links{font-size:.84rem;font-weight:600;display:flex;flex-wrap:wrap;gap:4px 14px}
+.label{display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:12px 0 5px}
+.say{background:var(--indigo-lt);border-radius:10px;padding:10px 14px;margin-top:12px;color:var(--indigo-dk)}
+.say b{font-weight:800}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.ask{background:var(--green-lt);border-radius:10px;padding:10px 14px;color:var(--green-tx)}
+.warn{background:var(--amber-lt);border:1px solid var(--amber-bd);border-radius:10px;padding:10px 14px;color:var(--amber-tx)}
+.ask .label,.warn .label{margin-top:0;color:inherit;opacity:.85}
+.bridge{margin-top:12px;font-size:.92rem;color:var(--muted)}
+.bridge b{color:var(--text)}
+@media (max-width:640px){.duo{grid-template-columns:1fr}.block,.card{padding:16px}}
+
+dl.faq dt{font-weight:800;margin-top:14px}
+dl.faq dt:first-child{margin-top:0}
+dl.faq dd{margin-top:4px;color:#334155}
+
+footer{margin-top:36px;font-size:.84rem;color:var(--muted)}
+
+@media print{
+  @page{size:A4;margin:14mm 12mm}
+  html,body{background:#fff;font-size:12.5px}
+  .wrap{max-width:none;padding:0}
+  .top-links,.toc,.block-links,.no-print{display:none!important}
+  .block,.card,.table-wrap,dl.faq dt{break-inside:avoid}
+  h2{break-after:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="kicker">Опорный конспект преподавателя · ДПО-1 «Основы применения искусственного интеллекта»</p>
+  <h1>Урок 1 — Как устроен современный ИИ</h1>
+  <div class="meta">
+    <span>90 минут</span>
+    <span>Начальный уровень</span>
+    <span>Только синтетические примеры</span>
+  </div>
+  <div class="top-links">
+    <a href="kak_ustroen_ii.html" target="_blank" rel="noopener">Открыть страницу урока ↗</a>
+    <a href="../oglavlenie.html">Оглавление курса</a>
+    <a href="#" onclick="window.print();return false;" class="no-print">Распечатать конспект</a>
+  </div>
+</header>
+
+<section aria-labelledby="h-idea">
+  <h2 id="h-idea">Цель и главная мысль</h2>
+  <div class="card main-idea">ИИ даёт не правду, а наиболее вероятное продолжение текста. Поэтому ему нужны чёткое ТЗ, чистый контекст, разрешённые данные и проверка человеком.</div>
+  <div class="card goal">
+    <p><strong>Результат урока.</strong> Слушатели различают запрос и контекст, объясняют роль токенов, замечают перегрузку диалога и выбирают инструмент по задаче, а не по рейтингу.</p>
+    <p><strong>Тон.</strong> Без хайпа: на каждую возможность — граница. Термин всегда рядом с метафорой, а не вместо неё.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-prep">
+  <h2 id="h-prep">Перед занятием</h2>
+  <div class="card">
+    <ul class="checks">
+      <li>Открыть страницу урока на проекторе и пролистать до конца: все 8 демо должны загрузиться. Демо удобнее показывать кнопкой «На весь экран».</li>
+      <li>Из сети площадки проверить доступ к GigaChat, Алисе AI, DeepSeek и arena.ai. Если что-то не открывается — показываем через демо на странице.</li>
+      <li>Подготовить 1–2 синтетических примера для ДЗ: заметки совещания по «насосной станции № 3», условный блок питания БП-12.</li>
+      <li>Обновить страницу перед началом: сбросятся ответы квиза. Чек-лист сбросить кнопкой «Сбросить отметки».</li>
+      <li>Закрыть личные вкладки и аккаунты. Даже для демонстрации — никаких реальных документов, ПДн и ТТХ во внешних сервисах.</li>
+    </ul>
+  </div>
+</section>
+
+<section aria-labelledby="h-plan">
+  <h2 id="h-plan">План занятия</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Время</th><th>Блок</th><th>Демо на странице</th></tr></thead>
+      <tbody>
+        <tr><td>00–02</td><td><a href="#b0">Открытие: курс, команда, правило данных</a></td><td>—</td></tr>
+        <tr><td>02–14</td><td><a href="#b1">История ИИ: от Тьюринга до ChatGPT</a></td><td>Лента истории</td></tr>
+        <tr><td>14–20</td><td><a href="#b2">Как устроен трансформер</a></td><td>Механизм внимания</td></tr>
+        <tr><td>20–26</td><td><a href="#b3">LLM — генератор вероятностей</a></td><td>Как LLM досочиняет ответ</td></tr>
+        <tr><td>26–30</td><td><a href="#b4">Формат задачи → класс инструмента</a></td><td>—</td></tr>
+        <tr><td>30–42</td><td><a href="#b5">Промпт и токены</a></td><td>Токенизатор, конструктор промпта</td></tr>
+        <tr><td>42–54</td><td><a href="#b6">Контекстное окно</a></td><td>Три состояния окна</td></tr>
+        <tr><td>54–68</td><td><a href="#b7">Выбор нейросети по задаче</a></td><td>Алгоритм выбора</td></tr>
+        <tr><td>68–78</td><td><a href="#b8">LLM Arena: слепое сравнение</a></td><td>Слепое сравнение, arena.ai</td></tr>
+        <tr><td>78–86</td><td><a href="#b9">Итоги и домашнее задание</a></td><td>Шаблон промпта, чек-лист</td></tr>
+        <tr><td>86–90</td><td><a href="#b10">Квиз и вопросы</a></td><td>Квиз</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="bridge">Опорные точки автора урока: история начинается на 2-й минуте, контекстное окно — 42–54 мин. Остальные тайминги — рекомендация. Если отстаёте, сокращайте справочник сервисов в блоке 7: он остаётся на странице для самостоятельного чтения.</p>
+</section>
+
+<section aria-labelledby="h-blocks">
+  <h2 id="h-blocks">Ход урока</h2>
+  <nav class="toc" aria-label="Блоки урока">
+    <a href="#b0">0 · Открытие</a><a href="#b1">1 · История</a><a href="#b2">2 · Трансформер</a><a href="#b3">3 · Вероятности</a><a href="#b4">4 · Форматы</a><a href="#b5">5 · Промпт и токены</a><a href="#b6">6 · Контекст</a><a href="#b7">7 · Выбор</a><a href="#b8">8 · Arena</a><a href="#b9">9 · ДЗ</a><a href="#b10">10 · Квиз</a>
+  </nav>
+  <p style="margin-bottom:14px"></p>
+
+  <article class="block" id="b0">
+    <div class="block-head">
+      <span class="time">00–02</span>
+      <h3>Открытие: курс, команда, правило данных</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#about" target="_blank" rel="noopener">О курсе ↗</a><a href="kak_ustroen_ii.html#team" target="_blank" rel="noopener">Команда ↗</a></span>
+    </div>
+    <ul class="list">
+      <li>ДПО-1 учит пяти вещам: ставить понятные задачи ИИ, проверять ответы, работать с контекстом, выбирать инструмент, получать черновой результат (инструкцию, таблицу, протокол, справку, проект письма).</li>
+      <li>Разработка, закрытый контур, агенты и программирование — отдельные последующие ДПО. На вопросы об этом: «будет, но не сегодня».</li>
+      <li>Правило курса: только синтетические и обезличенные данные. Реальные документы, ПДн, ТТХ и служебная переписка во внешние сервисы не загружаются.</li>
+    </ul>
+    <div class="say"><b>Сказать:</b> «Сегодня мы не жмём кнопки, а разбираемся, как устроена технология. Из устройства следуют и её возможности, и её ошибки».</div>
+  </article>
+
+  <article class="block" id="b1">
+    <div class="block-head">
+      <span class="time">02–14</span>
+      <h3>История ИИ: от Тьюринга до ChatGPT</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s1" target="_blank" rel="noopener">Раздел ↗</a><a href="lenta_istorii.html" target="_blank" rel="noopener">Лента истории ↗</a></span>
+    </div>
+    <span class="label">Четыре части — по 2–3 минуты</span>
+    <ol class="list">
+      <li><strong>Идеи.</strong> 1950 — Тьюринг и «Игра в имитацию». 1956 — Дартмутский семинар, Маккарти придумывает термин «искусственный интеллект». 1957 — перцептрон Розенблатта: первая обучаемая сеть и первый хайп.</li>
+      <li><strong>Разочарование и возрождение.</strong> 1966 — ELIZA и эффект Элизы: люди приписывают программе понимание. 1974–1980 — первая «зима ИИ». 1980-е — экспертные системы и обратное распространение ошибки.</li>
+      <li><strong>Прорывы.</strong> 1997 — Deep Blue: перебор позиций, а не нейросеть. 2012 — AlexNet: большие данные + обучение на GPU. 2016 — AlphaGo и «ход 37».</li>
+      <li><strong>Эра LLM.</strong> 2017 — архитектура Transformer. 2022 — ChatGPT: по оценке UBS, 100 млн пользователей примерно за 2 месяца.</li>
+    </ol>
+    <div class="say"><b>Итог блока:</b> каждый прорыв — это три двигателя сразу: новые алгоритмы, мощность «железа» (GPU) и объёмы данных.</div>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>«Было ли, что вы на секунду забыли, что переписываетесь с ботом?» — мостик к эффекту Элизы.</div>
+      <div class="warn"><span class="label">Осторожно</span>Проценты на слайде «Эволюция теста Тьюринга» получены в разных экспериментах — это не одна линейка. Пройденный тест ≠ понимание или сознание. Автопоказ ленты не включать, пока рассказываете, — листать вручную.</div>
+    </div>
+    <p class="bridge"><b>Переход:</b> «Для нас важнее всего 2017 год. Посмотрим, что внутри трёх букв GPT».</p>
+  </article>
+
+  <article class="block" id="b2">
+    <div class="block-head">
+      <span class="time">14–20</span>
+      <h3>Как устроен трансформер</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s2" target="_blank" rel="noopener">Раздел ↗</a><a href="vnimanie.html" target="_blank" rel="noopener">Механизм внимания ↗</a></span>
+    </div>
+    <ul class="list">
+      <li><strong>G-P-T:</strong> Generative — сочиняет ответ заново; Pre-trained — усвоил закономерности языка, а не заучил факты; Transformer — архитектура с механизмом внимания.</li>
+      <li><strong>Шаг 1 — токены и эмбеддинги.</strong> Текст режется на кусочки, каждый превращается в набор чисел. Метафора — «карта смыслов»: «кошка» рядом с «собакой», «экскаватор» далеко.</li>
+      <li><strong>Шаг 2 — Self-Attention.</strong> Модель смотрит на всё предложение сразу и связывает слова: «Заяц убежал от волка, потому что он был быстрым» — «он» = заяц.</li>
+      <li><strong>Шаг 3 — генерация.</strong> Из общего контекста модель пошагово строит ответ. Она не достаёт готовый ответ из базы.</li>
+    </ul>
+    <span class="label">Показать демо</span>
+    <p>Предложение А → выбрать «он» (нить к «заяц»). Затем предложение Б «Заяц <u>не</u> убежал…» — одно слово, и внимание переходит на «волка».</p>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>Перед переключением на Б: «А теперь кто был быстрым?»</div>
+      <div class="warn"><span class="label">Осторожно</span>Веса в демо условные: в реальной модели десятки слоёв и «голов» внимания.</div>
+    </div>
+    <p class="bridge"><b>Переход:</b> «Модель не ищет, а сочиняет. Что будет, если фактов у неё нет?»</p>
+  </article>
+
+  <article class="block" id="b3">
+    <div class="block-head">
+      <span class="time">20–26</span>
+      <h3>LLM — генератор вероятностей, а не поисковик</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s3" target="_blank" rel="noopener">Раздел ↗</a><a href="sleduyushchee_slovo.html" target="_blank" rel="noopener">Как LLM досочиняет ответ ↗</a></span>
+    </div>
+    <ul class="list">
+      <li>Метафора: <strong>Т9 на максималках</strong> — предлагает самое вероятное продолжение, но строит длинные цепочки. Или «идеальный, но фантазирующий стажёр».</li>
+      <li>Вход (инструкции + факты) → токенизация → расчёт вероятностей → генерация по шагам.</li>
+      <li>Главный риск — галлюцинации: модель заполняет пустоту правдоподобным текстом.</li>
+      <li>Без подключённого поиска модель не проверяет факты в реальном времени.</li>
+    </ul>
+    <span class="label">Показать демо</span>
+    <p>Вкладка «Следующее слово» («среда» — 85%). Затем «Галлюцинация по шагам»: биография «профессора, изобретшего квантовый опреснитель в Тюмени». Итог не открывать сразу.</p>
+    <div class="say"><b>Ключевая фраза:</b> «ИИ даёт не правду, а наиболее вероятное продолжение вашего текста».</div>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>Перед итогом: «Убедительно? Кто бы поверил и вставил в отчёт?» — и только потом открыть разоблачение.</div>
+      <div class="warn"><span class="label">Осторожно</span>Поиск и загруженные документы снижают риск выдумки, но не отменяют проверку: пересказать можно и настоящий источник неверно. В демо модель всегда берёт самый вероятный вариант — это упрощение.</div>
+    </div>
+  </article>
+
+  <article class="block" id="b4">
+    <div class="block-head">
+      <span class="time">26–30</span>
+      <h3>Формат задачи определяет класс инструмента</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s4" target="_blank" rel="noopener">Раздел ↗</a></span>
+    </div>
+    <ul class="list">
+      <li>Метафора: универсальный чат — швейцарский нож; для «тонны древесины» нужен лесопильный станок — специализированная модель.</li>
+      <li>Текст → LLM · Свежие факты → поиск/RAG · Изображение → диффузионные модели / Vision · Аудио → распознавание / синтез речи · «Посмотри на график» → мультимодальная LLM.</li>
+      <li>RAG простыми словами — экзамен с открытой книгой: сначала найти источник, потом ответить по нему.</li>
+      <li>Кнопка «загрузить файл» не даёт разрешения загружать производственные материалы.</li>
+    </ul>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>«Какая у вас задача на этой неделе и какой у неё входной формат?» — выслушать 1–2 ответа.</div>
+      <div class="warn"><span class="label">Осторожно</span>Слайд «Самые популярные нейросети»: аудитория — данные самих компаний (WAU и MAU несравнимы), большинство сервисов официально недоступны из РФ. Упоминая Meta, оговорить: компания признана экстремистской и запрещена в России.</div>
+    </div>
+  </article>
+
+  <article class="block" id="b5">
+    <div class="block-head">
+      <span class="time">30–42</span>
+      <h3>Промпт и токены</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s5" target="_blank" rel="noopener">Раздел ↗</a><a href="tokenizator.html" target="_blank" rel="noopener">Токенизатор ↗</a><a href="konstruktor_prompta.html" target="_blank" rel="noopener">Конструктор промпта ↗</a></span>
+    </div>
+    <ul class="list">
+      <li><strong>Токен</strong> — единица текста для модели. Частые короткие слова — 1 токен, длинные дробятся. Русский текст обычно «дороже» английского; разрыв зависит от токенизатора.</li>
+      <li>Метафора: <strong>телеграмма с оплатой за знаки</strong>. Крупный шрифт токенов не добавляет, а лишнее вежливое вступление отнимает полезное место.</li>
+      <li><strong>Промпт = ТЗ.</strong> Метафора шеф-повара: «сделай вкусно» → устрицы при аллергии; чёткое ТЗ → результат с первого раза. Garbage In — Garbage Out.</li>
+      <li><strong>MEGA-формула:</strong> Роль · Контекст · Задача · Ограничения · Формат.</li>
+      <li>Виды: zero-shot (без примеров), few-shot (с образцами), chain-of-thought («рассуждай по шагам»).</li>
+    </ul>
+    <span class="label">Показать демо</span>
+    <ol class="list">
+      <li>Токенизатор: «Встреча» → «Запомнить как A» → «+ поручение» → смотрим разницу. Вручную ничего не считаем.</li>
+      <li>Конструктор: «Размытый запрос» — чипы серые → «Письмо о задержке» — полное ТЗ. Можно сразу заполнить с группой пресет «ДЗ: чек-лист приёмки».</li>
+    </ol>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>Показать размытый запрос: «Каких элементов формулы здесь не хватает?»</div>
+      <div class="warn"><span class="label">Осторожно</span>Учебный токенизатор — упрощённая модель, его счёт не совпадает с реальными моделями. Точный подсчёт — во внешних токенизаторах из раздела. Хороший промпт снижает риск ошибок, но не делает факты верными.</div>
+    </div>
+    <p class="bridge"><b>Переход:</b> «Промпт — только часть того, что лежит у модели на столе. Что там ещё?»</p>
+  </article>
+
+  <article class="block" id="b6">
+    <div class="block-head">
+      <span class="time">42–54</span>
+      <h3>Контекстное окно: рабочий стол модели</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s6" target="_blank" rel="noopener">Раздел ↗</a><a href="kontekstnoe_okno.html" target="_blank" rel="noopener">Три состояния окна ↗</a></span>
+    </div>
+    <ul class="list">
+      <li>Опорные определения: <strong>ПРОМПТ</strong> — поручение и данные; <strong>ТОКЕН</strong> — единица обработки, не обязательно слово; <strong>КОНТЕКСТ</strong> — сведения, доступные модели при ответе.</li>
+      <li>Метафора: рабочий стол мастера. Это учебная аналогия, а не описание физической памяти.</li>
+      <li>В окне: системный промпт + история диалога + файлы + текущий запрос. При каждом ответе контекст обрабатывается заново.</li>
+      <li><strong>Lost in the Middle:</strong> начало и конец модель учитывает лучше, середина «растворяется».</li>
+      <li>Три симптома перегруза: теряются факты из середины, дольше ждать первого слова ответа, в API растёт расход.</li>
+      <li>Правила: один чат — одна задача; главное — в конец промпта; длинную историю — в проверенную выжимку и новый чат.</li>
+    </ul>
+    <span class="label">Показать демо</span>
+    <p>«Следующее состояние»: A = 100 → B = 130 (превышение 30) → C = 100 (резюме истории). Затем часть 2 — «Найдите ошибку в резюме»: день недели взят старый, а время — новое.</p>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>Когда резюме влезло в окно: «Короче — значит лучше?» Правильный ответ: нет, сверяем смысл.</div>
+      <div class="warn"><span class="label">Осторожно</span>100/130/100 — условные единицы, не лимит сервиса; при превышении сервисы ведут себя по-разному. Исследование Lost in the Middle — 2023 год, у новых моделей эффект слабее. 10 млн токенов у Llama 4 Scout — цифра разработчика (Meta — оговорка о запрете в РФ).</div>
+    </div>
+  </article>
+
+  <article class="block" id="b7">
+    <div class="block-head">
+      <span class="time">54–68</span>
+      <h3>Выбор нейросети по задаче, а не по рейтингу</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s7" target="_blank" rel="noopener">Раздел ↗</a><a href="vybor_instrumenta.html" target="_blank" rel="noopener">Алгоритм выбора ↗</a></span>
+    </div>
+    <ul class="list">
+      <li>Идеальной нейросети «для всего» нет: рейтинг не учитывает ваши задачи, юрисдикцию и требования к данным.</li>
+      <li>Метафора автопарка: спорткар — ChatGPT, Claude; карьерный самосвал — Gemini (огромный контекст); бронированный инкассатор — GigaChat, YandexGPT; тягач с открытым кодом — Qwen, DeepSeek на своём сервере.</li>
+      <li><strong>Три вопроса:</strong> категория данных → объём → тип задачи. Категория данных важнее остальных двух.</li>
+      <li>Кейсы «до/после»: отчёт на 400 страниц в чат с маленьким окном; юрист с реальным договором в зарубежном чат-боте.</li>
+      <li>Доступ из РФ (на 13.09.2026): ChatGPT и Gemini РФ официально не поддерживают; GigaChat и Алиса AI работают без VPN; DeepSeek и Qwen обычно открываются, но без официальной гарантии.</li>
+      <li>Перед первым использованием: официальный адрес, проверка на несекретном примере, «без VPN» ≠ «локально».</li>
+    </ul>
+    <span class="label">Показать демо</span>
+    <p>Пройти вслух два сценария: 🛑 данные с ПДн (любой объём) и 🟢 открытые данные + большой объём. Обратить внимание на оговорки в карточке результата.</p>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>«Какие из ваших рабочих материалов попадают в „красную“ категорию?»</div>
+      <div class="warn"><span class="label">Осторожно</span>Не советовать обход блокировок. Российский сервис — не автоматическое разрешение для ПДн и служебных данных: нужны согласие организации и подходящие условия. Если не хватает времени — справочник сервисов оставить на самостоятельное чтение.</div>
+    </div>
+  </article>
+
+  <article class="block" id="b8">
+    <div class="block-head">
+      <span class="time">68–78</span>
+      <h3>LLM Arena: один запрос в двух моделях</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s8" target="_blank" rel="noopener">Раздел ↗</a><a href="llm_arena.html" target="_blank" rel="noopener">Слепое сравнение ↗</a><a href="https://arena.ai/" target="_blank" rel="noopener">arena.ai ↗</a></span>
+    </div>
+    <ul class="list">
+      <li>Слепое A/B-тестирование: один промпт, две анонимные модели, оценка только по ответу. Имена открываются после голосования.</li>
+      <li>Метафоры: слепая дегустация кофе; собеседование с закрытыми именами в резюме.</li>
+      <li><strong>Пять критериев:</strong> точность и фактология · следование ограничениям · глубина · структура и читаемость · лаконичность.</li>
+      <li>Бизнес-смысл: простую задачу может решить модель в разы дешевле; спор «что моднее» заменяется измеримым качеством.</li>
+    </ul>
+    <span class="label">Показать демо</span>
+    <p>Зачитать промпт: «лизинг против кредита, ровно 3 различия, таблица из 3 колонок, без вступлений». Группа голосует руками по каждому критерию, затем «Победил А/Б» и раскрытие. Если arena.ai открывается из сети площадки — отправить туда один обезличенный запрос.</p>
+    <div class="duo">
+      <div class="ask"><span class="label">Спросить</span>«По какому критерию ответ А проиграл сильнее всего?» Ожидаемый ответ: следование ограничениям.</div>
+      <div class="warn"><span class="label">Осторожно</span>В ответ А намеренно вставлена фактическая ошибка («лизинг всегда выгоднее») — назвать её при разборе. Таблица — иллюстрация, не финансовая консультация. Публичный рейтинг арены — чужие задачи, а не ваши.</div>
+    </div>
+  </article>
+
+  <article class="block" id="b9">
+    <div class="block-head">
+      <span class="time">78–86</span>
+      <h3>Итоги и домашнее задание</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#s9" target="_blank" rel="noopener">Раздел ↗</a><a href="kak_ustroen_ii.html#checklist" target="_blank" rel="noopener">Чек-лист ↗</a></span>
+    </div>
+    <ul class="list">
+      <li><strong>Светофор данных.</strong> 🛑 Запрещено: реальные ТТХ, закрытые чертежи, служебная переписка с грифом, ПДн, коммерческая тайна. 🟢 Можно: синтетика, обезличенное стандартное оборудование, учебные фрагменты ГОСТов, открытые регламенты.</li>
+      <li><strong>Выбрать одну задачу:</strong> инженерно-технологическую (методика проверки условного узла, журнал сбоев), документационную (заметки совещания → протокол) или аналитическую (сравнение двух комплектующих таблицей).</li>
+      <li><strong>Шаг 1.</strong> Собрать MEGA-промпт из пяти элементов (шаблон на странице копируется одной кнопкой).</li>
+      <li><strong>Шаг 2.</strong> Запустить промпт или сравнить ответы двух доступных систем по пяти критериям арены; при необходимости уточнить запрос.</li>
+      <li><strong>Шаг 3.</strong> Заполнить карточку проверки: есть ли выдумки и что исправлено; соответствует ли формат ТЗ; какая выгода по времени (например, 40 минут вручную → 30 секунд ИИ + 3 минуты правки).</li>
+    </ul>
+    <div class="say"><b>Сказать:</b> «Результат домашнего задания — не текст от нейросети, а ваша карточка проверки».</div>
+  </article>
+
+  <article class="block" id="b10">
+    <div class="block-head">
+      <span class="time">86–90</span>
+      <h3>Квиз и вопросы</h3>
+      <span class="block-links"><a href="kak_ustroen_ii.html#quiz" target="_blank" rel="noopener">Квиз ↗</a></span>
+    </div>
+    <p>2–3 вопроса разобрать вслух голосованием руками, остальные — самостоятельно после занятия. Затем ответить на вопросы группы.</p>
+    <div class="say"><b>Финальная фраза:</b> «Нейросеть — быстрый, но фантазирующий стажёр. Чёткое ТЗ, никаких секретов и проверка результата — и 40 минут ручной работы превращаются в 3 минуты правки».</div>
+  </article>
+</section>
+
+<section aria-labelledby="h-quiz">
+  <h2 id="h-quiz">Ответы на квиз</h2>
+  <div class="card">
+    <ol class="list">
+      <li>LLM шаг за шагом выбирает наиболее вероятное продолжение текста.</li>
+      <li>Три фактора прорывов: новые алгоритмы, мощность «железа» (GPU) и объёмы данных.</li>
+      <li>Модели обучали в основном на английском, и русские слова чаще дробятся на несколько токенов.</li>
+      <li>Контекстное окно — ограниченный объём информации в токенах, который модель учитывает в одном диалоге.</li>
+      <li>Ключевую задачу и ограничения ставим в самый конец промпта.</li>
+      <li>Для договора с ПДн — разрешённый в организации российский сервис или локальная модель внутри контура.</li>
+      <li>Названия моделей в арене скрывают, чтобы оценка шла по качеству ответа, а не по бренду.</li>
+    </ol>
+  </div>
+</section>
+
+<section aria-labelledby="h-faq">
+  <h2 id="h-faq">Частые вопросы слушателей</h2>
+  <div class="card">
+    <dl class="faq">
+      <dt>«Можно загрузить наш регламент или отчёт в GigaChat?»</dt>
+      <dd>Только открытый документ — или при разрешении организации и подходящих условиях обработки. Российский сервис не отменяет правил работы со служебной информацией. На курсе — только синтетика.</dd>
+      <dt>«ИИ понимает, что пишет?»</dt>
+      <dd>Модель вычисляет вероятности на основе закономерностей в текстах. Тест Тьюринга проверяет умение имитировать диалог, а не понимание. Отсюда и уверенные ошибки.</dd>
+      <dt>«Почему на один и тот же вопрос ответы разные?»</dt>
+      <dd>При генерации модель выбирает продолжение с долей случайности, а не всегда самый вероятный вариант. В демо урока это упрощено.</dd>
+      <dt>«Почему модель забыла, о чём мы договорились в начале чата?»</dt>
+      <dd>Длинная история не поместилась в контекстное окно или «потерялась в середине». Лечится выжимкой договорённостей и новым чатом.</dd>
+      <dt>«А если ChatGPT не открывается?»</dt>
+      <dd>Курс опирается на официально доступные сервисы, обход ограничений не рекомендуем. Для задач урока и ДЗ хватает GigaChat, Алисы AI и демо на странице.</dd>
+      <dt>«ИИ заменит сотрудников?»</dt>
+      <dd>На курсе ИИ готовит черновик, а решение, проверка и ответственность остаются за человеком. Выгода — в сэкономленных часах на черновик, а не в отказе от проверки.</dd>
+      <dt>«Сколько это стоит?»</dt>
+      <dd>В чатах — тариф сервиса. В API платят за входящие и исходящие токены: длинная история в каждом запросе заметно увеличивает расход.</dd>
+    </dl>
+  </div>
+</section>
+
+<footer>
+  <p>Опорный конспект к уроку 1 «Как устроен современный ИИ» · ДПО-1 «Основы применения искусственного интеллекта» · Клуб «ИИ в образовании» · 2026</p>
+  <p>Сведения о сервисах — на 13 сентября 2026 года; перед занятием проверьте доступ из сети площадки.</p>
+</footer>
+
+</div>
+</body>
+</html>

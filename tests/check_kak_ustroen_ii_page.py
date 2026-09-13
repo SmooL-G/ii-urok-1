@@ -178,5 +178,38 @@ class KakUstroenIiPageTest(unittest.TestCase):
         self.assertIn("web/kak_ustroen_ii.html", INDEX.read_text(encoding="utf-8"))
 
 
+class TeacherNotesTest(unittest.TestCase):
+    NOTES = ROOT / "web" / "konspekt_prepodavatelya.html"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.html = cls.NOTES.read_text(encoding="utf-8")
+        cls.parser = parse(cls.NOTES)
+        cls.lesson_ids = set(parse(PAGE).id_counts)
+
+    def test_notes_are_self_contained(self):
+        self.assertIn('lang="ru"', self.html)
+        for forbidden in ("<script src=", "<link rel=\"stylesheet\"", "cdn."):
+            self.assertNotIn(forbidden, self.html)
+
+    def test_timeline_covers_ninety_minutes(self):
+        for marker in ("00–02", "42–54", "86–90", "Ответы на квиз", "Частые вопросы слушателей"):
+            self.assertIn(marker, self.html, marker)
+        blocks = {key for key in self.parser.id_counts if re.fullmatch(r"b\d+", key)}
+        self.assertEqual({f"b{i}" for i in range(11)}, blocks)
+
+    def test_links_to_lesson_and_demos_resolve(self):
+        for href in self.parser.hrefs:
+            if href == "#":
+                continue  # кнопка «Распечатать»
+            if href.startswith("#"):
+                self.assertIn(href[1:], self.parser.id_counts, href)
+            elif href.startswith("kak_ustroen_ii.html#"):
+                self.assertIn(href.split("#", 1)[1], self.lesson_ids, href)
+            elif href.endswith(".html") and not href.startswith("http"):
+                self.assertTrue((self.NOTES.parent / href).resolve().is_file(), href)
+        self.assertIn('href="web/konspekt_prepodavatelya.html"', TOC.read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Урок 1 — Как устроен современный ИИ</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧠%3C/text%3E%3C/svg%3E">
-<meta name="description" content="Интерактивный лонгрид урока 1 курса ДПО-1 «Основы применения ИИ»: история ИИ, трансформер, токены, промпт, контекстное окно и выбор нейросети под задачу.">
+<meta name="description" content="Интерактивный лонгрид урока 1 курса ДПО-1 «Основы применения искусственного интеллекта»: история ИИ, трансформер, токены, промпт, контекстное окно и выбор нейросети под задачу.">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -270,6 +270,38 @@ details.acc>summary:hover{background:#f8fafc}
 .conclusion-list li{counter-increment:concl;padding-left:38px;position:relative;font-size:1rem;line-height:1.65}
 .conclusion-list li::before{content:counter(concl);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--indigo);color:#fff;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center}
 
+/* COURSE + TEAM */
+.eyebrow{display:inline-block;padding:4px 12px;border-radius:100px;background:var(--indigo-lt);border:1px solid #c7d2fe;color:var(--indigo-dk);font-size:.74rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;margin-bottom:12px}
+.course-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media (max-width:1000px){.course-steps{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.course-steps{grid-template-columns:1fr}}
+.course-step{position:relative;padding:20px 18px}
+.course-step .cs-num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--indigo);color:#fff;font-weight:900;font-size:.85rem;margin-bottom:10px}
+.course-step .cs-ico{float:right;font-size:1.5rem;line-height:1}
+.course-step .cs-name{font-weight:800;font-size:.97rem;line-height:1.35;margin-bottom:6px}
+.course-step p:not(.cs-name){color:var(--muted);font-size:.88rem;line-height:1.55}
+.team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px}
+@media (max-width:860px){.team-grid{grid-template-columns:1fr}}
+.team-card{display:flex;gap:20px;align-items:flex-start}
+.team-ava{position:relative;width:108px;height:108px;flex-shrink:0;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--indigo),var(--cyan));box-shadow:0 0 0 3px #fff,0 0 0 5px #c7d2fe,0 10px 24px rgba(15,23,42,.14);margin:4px}
+.team-initials{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:1.6rem}
+.team-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.team-photo.img-missing{display:none}
+.team-name{font-weight:800;font-size:1.08rem;line-height:1.3}
+.team-role{color:var(--indigo-dk);font-weight:700;font-size:.86rem;line-height:1.45;margin:4px 0 10px}
+.team-bio{color:var(--muted);font-size:.9rem;line-height:1.7}
+@media (max-width:520px){.team-card{flex-direction:column;gap:14px}}
+.lesson-title{font-size:clamp(1.9rem,4.4vw,2.9rem);font-weight:900;line-height:1.15;letter-spacing:-1px;margin-bottom:14px}
+.lesson-title em{color:var(--indigo);font-style:normal}
+.hero-badges.left{justify-content:flex-start;margin-bottom:14px}
+
+/* CTA */
+.cta-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(135deg,#eef2ff,#e0f2fe);border:1px solid #c7d2fe;border-radius:16px;padding:20px 24px;margin:0 0 24px}
+.cta-card .cta-text{flex:1;min-width:240px}
+.cta-card .cta-text p+p{margin-top:4px}
+.cta-link{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:12px;background:var(--indigo);color:#fff;font-weight:800;font-size:.95rem;text-decoration:none;box-shadow:0 8px 20px rgba(99,102,241,.25);transition:background .2s,transform .15s;white-space:nowrap}
+.cta-link:hover{background:var(--indigo-dk);transform:translateY(-1px)}
+
 /* SCROLL REVEAL */
 .fade{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
 .fade.in{opacity:1;transform:none}
@@ -285,8 +317,11 @@ footer{text-align:center;padding:32px 20px 48px;color:var(--muted);font-size:.85
 <nav class="top" aria-label="Навигация по странице">
   <a class="nav-link" href="../oglavlenie.html">← Оглавление</a>
   <span class="nav-sep"></span>
-  <span class="nav-logo">Урок 1 · Как устроен ИИ</span>
+  <span class="nav-logo">ДПО-1 · Урок 1</span>
   <span class="nav-sep"></span>
+  <a class="nav-link" href="#about">О курсе</a>
+  <a class="nav-link" href="#team">Команда</a>
+  <a class="nav-link" href="#lesson">Урок 1</a>
   <a class="nav-link" href="#s1">История ИИ</a>
   <a class="nav-link" href="#s2">Трансформер</a>
   <a class="nav-link" href="#s3">Генератор вероятностей</a>
@@ -302,29 +337,124 @@ footer{text-align:center;padding:32px 20px 48px;color:var(--muted);font-size:.85
 
 <header id="hero">
   <div class="hero-badges">
-    <span class="hero-badge">ДПО-1 · Урок 1</span>
-    <span class="hero-badge">90 минут</span>
-    <span class="hero-badge">Начальный уровень</span>
-    <span class="hero-badge">Только синтетические примеры</span>
+    <span class="hero-badge">ДПО-1</span>
+    <span class="hero-badge">Образовательная программа</span>
+    <span class="hero-badge">Для сотрудников любых ролей</span>
+    <span class="hero-badge">Синтетические и обезличенные данные</span>
   </div>
-  <h1 class="hero-title">Как устроен <em>современный ИИ</em></h1>
-  <p class="hero-sub">После урока вы сможете отличать запрос от контекста, объяснять роль токенов, замечать перегрузку диалога и выбирать нейросеть под задачу, а не по рейтингу.</p>
+  <h1 class="hero-title">ДПО-1 «Основы применения <em>искусственного интеллекта</em>»</h1>
+  <p class="hero-sub">Практический курс для сотрудников, которые хотят понять, как устроены современные нейросети и где они могут быть полезны в повседневных рабочих задачах.</p>
   <figure class="img-card hero-img" data-lightbox>
-    <img src="../png/kak_ustroen_ii/01_hero_ot_ruchnogo_analiza_k_ii.jpg" alt="Инфографика «От ручного анализа к ИИ»: слева человек изучает документы вручную, справа нейросеть обрабатывает сигнал и ускоряет принятие решений" onerror="this.closest('.img-card').classList.add('img-missing')">
-    <figcaption class="img-missing-caption">«От ручного анализа к ИИ» — обзорный слайд урока</figcaption>
+    <img src="../png/kurs/00_o_kurse.jpg" alt="Инфографика курса ДПО-1 «Основы применения искусственного интеллекта»: пять навыков — ставить понятные задачи, проверять ответы, работать с контекстом, выбирать инструмент и получать черновой результат; что будет дальше, безопасность данных и эксперты курса" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">ДПО-1 «Основы применения искусственного интеллекта» — обзор курса</figcaption>
   </figure>
   <nav class="hero-nav" aria-label="Разделы страницы">
-    <a href="#s1">От Тьюринга до ChatGPT</a>
+    <a href="#about">О курсе</a>
+    <a href="#team">Команда курса</a>
+    <a href="#lesson">Урок 1: как устроен ИИ</a>
     <a href="#s3">Почему ИИ «фантазирует»</a>
     <a href="#s5">Промпт как ТЗ</a>
-    <a href="#s6">Контекстное окно</a>
     <a href="#s7">Какую нейросеть выбрать</a>
-    <a href="#s9">Домашнее задание</a>
+    <a href="#s8">LLM Arena</a>
     <a href="#quiz">Проверить себя</a>
   </nav>
 </header>
 
 <main>
+
+<!-- ══════════ О КУРСЕ ══════════ -->
+<section class="sec" id="about">
+  <div class="sec-head fade">
+    <span class="eyebrow">О курсе</span>
+    <h2 class="sec-title">Чему мы учимся на курсе</h2>
+    <p class="sec-desc">На занятиях мы будем учиться ставить понятные задачи ИИ, проверять ответы, работать с контекстом, выбирать подходящий инструмент и получать полезный черновой результат: инструкцию, таблицу, протокол, аналитическую справку или проект письма.</p>
+  </div>
+
+  <div class="course-steps fade">
+    <div class="card course-step"><span class="cs-ico" aria-hidden="true">💬</span><span class="cs-num">1</span><p class="cs-name">Ставить понятные задачи</p><p>Учимся формулировать эффективные запросы для ИИ.</p></div>
+    <div class="card course-step"><span class="cs-ico" aria-hidden="true">🔍</span><span class="cs-num">2</span><p class="cs-name">Проверять ответы</p><p>Оцениваем качество и корректность результатов.</p></div>
+    <div class="card course-step"><span class="cs-ico" aria-hidden="true">🗂️</span><span class="cs-num">3</span><p class="cs-name">Работать с контекстом</p><p>Используем нужные данные и задаём рамки.</p></div>
+    <div class="card course-step"><span class="cs-ico" aria-hidden="true">⚙️</span><span class="cs-num">4</span><p class="cs-name">Выбирать инструмент</p><p>Сравниваем возможности разных нейросетей.</p></div>
+    <div class="card course-step"><span class="cs-ico" aria-hidden="true">📄</span><span class="cs-num">5</span><p class="cs-name">Получать черновой результат</p><p>Инструкция, таблица, протокол, аналитическая справка, проект письма.</p></div>
+  </div>
+
+  <div class="grid-2 fade mt">
+    <div class="note-callout">
+      <p><strong>🪜 Что будет дальше</strong></p>
+      <p>Сложные темы — разработка, внедрение в закрытый контур, создание агентов и программирование — будут анонсированы как отдельные последующие ДПО.</p>
+    </div>
+    <div class="ok-callout">
+      <p><strong>🛡️ Безопасность данных</strong><br>Все практические примеры в курсе построены на синтетических и обезличенных данных. Реальные закрытые документы, персональные данные, технические характеристики и служебная переписка во внешние сервисы не загружаются.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ КОМАНДА КУРСА ══════════ -->
+<section class="sec" id="team">
+  <div class="sec-head fade">
+    <span class="eyebrow">Команда курса</span>
+    <h2 class="sec-title">Кто ведёт курс</h2>
+    <p class="sec-desc">Эксперты Клуба «ИИ в образовании»: методология и внедрение ИИ, преподавание, техническая архитектура и практика применения нейросетей.</p>
+  </div>
+
+  <div class="team-grid">
+    <article class="card team-card fade">
+      <span class="team-ava"><span class="team-initials" aria-hidden="true">ДШ</span><img class="team-photo" src="../png/kurs/foto_shandalin.jpg" alt="Шандалин Денис Анатольевич" loading="lazy" onerror="this.classList.add('img-missing')"></span>
+      <div>
+        <h3 class="team-name">Шандалин Денис Анатольевич</h3>
+        <p class="team-role">Руководитель проекта, методолог, эксперт по внедрению ИИ</p>
+        <p class="team-bio">Руководитель проекта и Клуба «ИИ в образовании», методолог, эксперт по внедрению искусственного интеллекта в образование и бизнес. Более 20 лет опыта в предпринимательстве, управлении, продажах и работе с коммерческой недвижимостью. Основатель «Агентства Новых Перспектив», разработчик образовательных программ и практических решений на базе ИИ. Специализируется на проектировании AI-ассистентов и агентных систем, внедрении нейросетей в бизнес-процессы, разработке методологии обучения и практических программ дополнительного профессионального образования. Спикер образовательных и отраслевых мероприятий, занимается подготовкой специалистов и внедрением AI-решений в корпоративный сектор.</p>
+      </div>
+    </article>
+    <article class="card team-card fade">
+      <span class="team-ava"><span class="team-initials" aria-hidden="true">МК</span><img class="team-photo" src="../png/kurs/foto_kurpichev.jpg" alt="Курпичев Максим Анатольевич" loading="lazy" onerror="this.classList.add('img-missing')"></span>
+      <div>
+        <h3 class="team-name">Курпичев Максим Анатольевич</h3>
+        <p class="team-role">Кандидат экономических наук, доцент МГУ имени М.В. Ломоносова</p>
+        <p class="team-bio">Кандидат экономических наук, доцент МГУ имени М.В. Ломоносова, преподаватель курсов по направлению «Инноватика». Более 10 лет опыта преподавания по программам высшего образования, автор и разработчик 10 образовательных курсов. Куратор образовательной онлайн-платформы «ЯСПОСОБЕН», отмеченной на ПМЭФ-2025, куратор проектов «ЯСПОСОБЕН» в рамках Всероссийского акселератора социальных инициатив RAISE. Куратор студенческих стартап-проектов, сертифицированный бизнес-трекер, эксперт Клуба «ИИ в образовании».</p>
+      </div>
+    </article>
+    <article class="card team-card fade">
+      <span class="team-ava"><span class="team-initials" aria-hidden="true">ИЧ</span><img class="team-photo" src="../png/kurs/foto_churilov.jpg" alt="Чурилов Илья Владимирович" loading="lazy" onerror="this.classList.add('img-missing')"></span>
+      <div>
+        <h3 class="team-name">Чурилов Илья Владимирович</h3>
+        <p class="team-role">Технический лидер, специалист по AI-инструментам и автоматизации</p>
+        <p class="team-bio">Сооснователь и эксперт Клуба «ИИ в образовании», технический лидер и специалист по внедрению искусственного интеллекта. Более 15 лет опыта в автоматизации бизнес-процессов, около 3 лет занимается разработкой и внедрением AI-продуктов, чат-ботов, цифровизации HR и образовательных решений. Отвечает за техническую архитектуру, запуск и адаптацию AI-инструментов, автоматизацию рабочих процессов и обучение практическому применению ИИ.</p>
+      </div>
+    </article>
+    <article class="card team-card fade">
+      <span class="team-ava"><span class="team-initials" aria-hidden="true">ЕЧ</span><img class="team-photo" src="../png/kurs/foto_chepik.jpg" alt="Чепик Елена Юрьевна" loading="lazy" onerror="this.classList.add('img-missing')"></span>
+      <div>
+        <h3 class="team-name">Чепик Елена Юрьевна</h3>
+        <p class="team-role">Эксперт по нейросетям и искусственному интеллекту</p>
+        <p class="team-bio">Эксперт по нейросетям и искусственному интеллекту, автор образовательных курсов по ИИ, разработчик решений на базе больших языковых моделей. Более 15 лет преподавательского опыта в вузах и других образовательных учреждениях. Проходила обучение в ведущих университетах России и Европы. Специализируется на внедрении ИИ в образовательные программы, обучении практическому применению нейросетей, а также использовании ИИ в журналистике и цифровом искусстве.</p>
+      </div>
+    </article>
+  </div>
+
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kurs/00_komanda.jpg" alt="Слайд «Эксперты клуба»: Максим, Елена, Илья и Денис — четыре эксперта Клуба «ИИ в образовании»" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">Эксперты Клуба «ИИ в образовании»</figcaption>
+  </figure>
+</section>
+
+<!-- ══════════ УРОК 1: ВВЕДЕНИЕ ══════════ -->
+<section class="sec" id="lesson">
+  <div class="sec-head fade">
+    <span class="eyebrow">Урок 1</span>
+    <h2 class="lesson-title">Как устроен <em>современный ИИ</em></h2>
+    <div class="hero-badges left">
+      <span class="hero-badge">90 минут</span>
+      <span class="hero-badge">Начальный уровень</span>
+      <span class="hero-badge">Только синтетические примеры</span>
+    </div>
+    <p class="sec-desc">После урока вы сможете отличать запрос от контекста, объяснять роль токенов, замечать перегрузку диалога и выбирать нейросеть под задачу, а не по рейтингу.</p>
+  </div>
+  <figure class="img-card img-single fade" data-lightbox>
+    <img src="../png/kak_ustroen_ii/01_hero_ot_ruchnogo_analiza_k_ii.jpg" alt="Инфографика «От ручного анализа к ИИ»: слева человек изучает документы вручную, справа нейросеть обрабатывает сигнал и ускоряет принятие решений" loading="lazy" onerror="this.closest('.img-card').classList.add('img-missing')">
+    <figcaption class="img-missing-caption">«От ручного анализа к ИИ» — обзорный слайд урока</figcaption>
+  </figure>
+</section>
 
 <!-- ══════════ БЛОК 1: ИСТОРИЯ ИИ ══════════ -->
 <section class="sec" id="s1">
@@ -998,6 +1128,14 @@ footer{text-align:center;padding:32px 20px 48px;color:var(--muted);font-size:.85
     <p class="sec-desc"><strong>LLM Arena</strong> — слепое A/B-тестирование: две нейросети отвечают на один и тот же промпт, названия скрыты, а оценка ставится только по качеству и точности ответа. Имена моделей открываются после голосования.</p>
   </div>
 
+  <div class="cta-card fade">
+    <div class="cta-text">
+      <p class="card-title">🏟️ Ресурс для практики: LLM Arena — <a class="svc-link" href="https://arena.ai/" target="_blank" rel="noopener">arena.ai</a></p>
+      <p class="muted">Отправьте один обезличенный запрос двум анонимным моделям, сравните ответы и проголосуйте — названия моделей откроются после голоса. Доступ из РФ не проверялся; рабочие данные туда не отправляйте.</p>
+    </div>
+    <a class="cta-link" href="https://arena.ai/" target="_blank" rel="noopener">Открыть LLM Arena ↗</a>
+  </div>
+
   <div class="metaphor fade">
     <span class="m-ico" aria-hidden="true">☕</span>
     <div>
@@ -1291,8 +1429,8 @@ footer{text-align:center;padding:32px 20px 48px;color:var(--muted);font-size:.85
 </div>
 
 <footer>
-  <p>Урок 1 «Как устроен современный ИИ» · ДПО-1 «Основы применения ИИ» · 2026</p>
-  <p>Клуб «ИИ в образовании» · материалы урока — Денис Шандалин</p>
+  <p>Урок 1 «Как устроен современный ИИ» · ДПО-1 «Основы применения искусственного интеллекта» · 2026</p>
+  <p>Клуб «ИИ в образовании» · команда курса: Д. А. Шандалин, М. А. Курпичев, И. В. Чурилов, Е. Ю. Чепик</p>
   <p class="src-note">Сведения о сервисах проверены по открытым официальным источникам на 13 сентября 2026 года и могут меняться.</p>
 </footer>
 

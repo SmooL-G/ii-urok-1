@@ -53,7 +53,7 @@ class KakUstroenIiPageTest(unittest.TestCase):
         cls.parser = parse(PAGE)
 
     def test_required_sections_and_unique_ids(self):
-        required = {"hero", "checklist", "quiz", "final"} | {f"s{i}" for i in range(1, 10)}
+        required = {"hero", "about", "team", "lesson", "checklist", "quiz", "final"} | {f"s{i}" for i in range(1, 10)}
         self.assertTrue(required.issubset(self.parser.id_counts), required - set(self.parser.id_counts))
         duplicates = [key for key, count in self.parser.id_counts.items() if count > 1]
         self.assertEqual([], duplicates)
@@ -84,6 +84,26 @@ class KakUstroenIiPageTest(unittest.TestCase):
             "карточку проверки",
         ):
             self.assertIn(marker, self.html, marker)
+
+    def test_course_info_and_team_come_first(self):
+        order = [self.html.index(f'id="{key}"') for key in ("hero", "about", "team", "lesson", "s1")]
+        self.assertEqual(sorted(order), order)
+        self.assertIn("ДПО-1 «Основы применения <em>искусственного интеллекта</em>»", self.html)
+        for marker in (
+            "Сложные темы — разработка, внедрение в закрытый контур",
+            "синтетических и обезличенных данных",
+            "Шандалин Денис Анатольевич",
+            "Курпичев Максим Анатольевич",
+            "Чурилов Илья Владимирович",
+            "Чепик Елена Юрьевна",
+        ):
+            self.assertIn(marker, self.html, marker)
+        for photo in ("foto_shandalin", "foto_kurpichev", "foto_churilov", "foto_chepik"):
+            self.assertTrue((ROOT / "png" / "kurs" / f"{photo}.jpg").is_file(), photo)
+
+    def test_arena_link_in_llm_arena_section(self):
+        s8 = self.html.split('id="s8"', 1)[1].split('id="s9"', 1)[0]
+        self.assertIn('class="cta-link" href="https://arena.ai/"', s8)
 
     def test_meta_disclaimer_next_to_meta_mentions(self):
         self.assertIn("Meta признана экстремистской организацией", self.html)
@@ -120,7 +140,7 @@ class KakUstroenIiPageTest(unittest.TestCase):
             src = img.get("src", "")
             if not src:
                 continue  # картинка лайтбокса заполняется скриптом
-            self.assertTrue(src.startswith("../png/kak_ustroen_ii/"), src)
+            self.assertTrue(src.startswith(("../png/kak_ustroen_ii/", "../png/kurs/")), src)
             self.assertTrue((PAGE.parent / src).resolve().is_file(), src)
             self.assertTrue(img.get("alt"), src)
             self.assertIn("img-missing", img.get("onerror", ""), src)
